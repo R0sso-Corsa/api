@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Contact</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1100px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,textarea,button { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .panel { padding:22px; } .grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; } h1,h2 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } .form { display:grid; gap:12px; } input,textarea,button { width:100%; padding:14px; color:var(--text); font:inherit; } textarea { min-height:130px; resize:vertical; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .code { display:inline-block; background:#07100e; border:1px solid var(--line); border-radius:12px; padding:8px 10px; color:var(--accent); } @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Contact</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Join pilot waitlist</h1>
+        <p>Best fit: planning consultancies, land buyers, architecture teams, and local-market operators monitoring England planning activity.</p>
+        <div class="form">
+          <input id="fullName" placeholder="Full name">
+          <input id="companyName" placeholder="Company name">
+          <input id="email" placeholder="Work email">
+          <input id="targetGeography" placeholder="Target geography, e.g. South Yorkshire / Camden">
+          <textarea id="useCase" placeholder="Use case: what planning activity do you need to monitor?"></textarea>
+          <button id="submitBtn">Join Waitlist</button>
+        </div>
+        <div id="status" class="meta">No request submitted yet.</div>
+      </section>
+      <section class="panel">
+        <h2>Pilot offer</h2>
+        <p>PlanSignal Pilot includes live dashboard access, official planning data monitoring, daily change review, and early product shaping input.</p>
+        <p class="meta">API-first users can move straight into <span class="code">/developers</span> and <span class="code">/playground</span>.</p>
+      </section>
+    </div>
+  </div>
+  <script>
+    async function joinWaitlist() {
+      const payload = {
+        full_name: document.getElementById("fullName").value,
+        company_name: document.getElementById("companyName").value,
+        email: document.getElementById("email").value,
+        target_geography: document.getElementById("targetGeography").value,
+        use_case: document.getElementById("useCase").value
+      };
+      const response = await fetch("/site/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || JSON.stringify(result));
+      document.getElementById("status").textContent = `${result.message} Queue id: ${result.entry.waitlist_id}`;
+    }
+    document.getElementById("submitBtn").addEventListener("click", () => joinWaitlist().catch((error) => {
+      document.getElementById("status").textContent = `Submission failed: ${error.message}`;
+    }));
+  </script>
+</body>
+</html>

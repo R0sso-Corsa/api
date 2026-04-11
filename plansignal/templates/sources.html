@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Data Sources</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1240px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,.item { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; } .panel { padding:22px; } .list { display:grid; gap:14px; } .item { padding:16px; } h1,h2 { margin:0 0 12px; } p { color:var(--muted); line-height:1.6; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Sources</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <section class="panel">
+      <h1>Official Data Sources</h1>
+      <p>Current runtime uses live official Planning Data feeds for application and context records. Local data remains only for user accounts, watchlists, usage, and API keys.</p>
+      <div class="list">
+        <div class="item"><strong>Planning applications</strong><p>Primary live entity feed for England planning application records.</p><a href="https://www.planning.data.gov.uk/dataset/planning-application" target="_blank" rel="noreferrer">Open dataset</a></div>
+        <div class="item"><strong>Local planning authorities</strong><p>Official England authority catalogue for filtering and UI selection.</p><a href="https://www.planning.data.gov.uk/dataset/local-planning-authority" target="_blank" rel="noreferrer">Open dataset</a></div>
+        <div class="item"><strong>Article 4 directions</strong><p>Policy-control overlay used for context and future scoring logic.</p><a href="https://www.planning.data.gov.uk/dataset/article-4-direction" target="_blank" rel="noreferrer">Open dataset</a></div>
+        <div class="item"><strong>Brownfield land</strong><p>Development opportunity overlay used for supply and site-screening context.</p><a href="https://www.planning.data.gov.uk/dataset/brownfield-land" target="_blank" rel="noreferrer">Open dataset</a></div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

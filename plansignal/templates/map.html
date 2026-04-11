@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Map</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1280px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,button,svg { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .grid { display:grid; grid-template-columns:0.7fr 1.3fr; gap:22px; } .panel { padding:22px; } .controls { display:grid; gap:12px; } .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; } h1,h2 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,button { width:100%; padding:14px; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .small { font-size:12px; }
+    svg { width:100%; height:620px; padding:10px; } .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; } .dot { display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px; } .app { background:#52f2b3; } .brownfield { background:#7bd8ff; } .list { display:grid; gap:10px; max-height:420px; overflow:auto; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } @media (max-width:1000px){ .grid{ grid-template-columns:1fr; } svg{ height:420px; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Map</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Spatial console</h1>
+        <p>Plots live official brownfield points plus any planning applications carrying coordinates in the current official feed slice. Current official planning-application feed may return zero mapped application points in some slices.</p>
+        <div class="controls">
+          <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
+          <div class="row">
+            <input id="centerLat" placeholder="Center latitude, e.g. 53.5228">
+            <input id="centerLon" placeholder="Center longitude, e.g. -1.1285">
+          </div>
+          <input id="radiusKm" placeholder="Radius km, e.g. 25">
+          <div class="row">
+            <input id="minLat" placeholder="BBox min lat">
+            <input id="maxLat" placeholder="BBox max lat">
+          </div>
+          <div class="row">
+            <input id="minLon" placeholder="BBox min lon">
+            <input id="maxLon" placeholder="BBox max lon">
+          </div>
+          <button id="loadBtn">Load Map Data</button>
+        </div>
+        <div id="meta" class="meta">No map data loaded.</div>
+        <div class="meta small">Use either radius filter, bbox filter, or both.</div>
+        <div id="list" class="list"></div>
+      </section>
+      <section class="panel">
+        <h2>England plotting surface</h2>
+        <svg id="map" viewBox="0 0 1000 620"></svg>
+        <div class="legend"><span><span class="dot app"></span>Applications</span><span><span class="dot brownfield"></span>Brownfield</span></div>
+      </section>
+    </div>
+  </div>
+  <script>
+    function project(lat, lon) {
+      const x = ((lon + 6.5) / 8.8) * 960 + 20;
+      const y = ((56.2 - lat) / 6.0) * 580 + 20;
+      return { x, y };
+    }
+    function draw(data) {
+      const svg = document.getElementById("map");
+      svg.innerHTML = `<rect x="0" y="0" width="1000" height="620" fill="#07100e"></rect>`;
+      for (const site of data.brownfield) {
+        const p = project(site.lat, site.lon);
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#7bd8ff"><title>${site.site_address || site.name}</title></circle>`;
+      }
+      for (const app of data.applications) {
+        const p = project(app.lat, app.lon);
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#52f2b3"><title>${app.address}</title></circle>`;
+      }
+      document.getElementById("meta").textContent = `Loaded ${data.application_count} mapped applications and ${data.brownfield_count} mapped brownfield records.`;
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+      for (const item of [...data.applications.slice(0, 20), ...data.brownfield.slice(0, 20)]) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.textContent = item.address || item.site_address || item.name || item.reference;
+        list.appendChild(div);
+      }
+    }
+    async function loadMap() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const centerLat = document.getElementById("centerLat").value.trim();
+      const centerLon = document.getElementById("centerLon").value.trim();
+      const radiusKm = document.getElementById("radiusKm").value.trim();
+      const minLat = document.getElementById("minLat").value.trim();
+      const maxLat = document.getElementById("maxLat").value.trim();
+      const minLon = document.getElementById("minLon").value.trim();
+      const maxLon = document.getElementById("maxLon").value.trim();
+      const params = new URLSearchParams();
+      if (centerLat) params.set("center_lat", centerLat);
+      if (centerLon) params.set("center_lon", centerLon);
+      if (radiusKm) params.set("radius_km", radiusKm);
+      if (minLat) params.set("min_lat", minLat);
+      if (maxLat) params.set("max_lat", maxLat);
+      if (minLon) params.set("min_lon", minLon);
+      if (maxLon) params.set("max_lon", maxLon);
+      const url = params.toString() ? `/map/data?${params.toString()}` : "/map/data";
+      const response = await fetch(url, { headers: { "X-API-Key": apiKey } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      draw(data);
+    }
+    document.getElementById("loadBtn").addEventListener("click", () => loadMap().catch((error) => {
+      document.getElementById("meta").textContent = `Map load failed: ${error.message}`;
+    }));
+  </script>
+</body>
+</html>

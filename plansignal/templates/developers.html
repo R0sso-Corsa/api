@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Developers</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1240px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; } .grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; } .panel { padding:22px; } h1,h2 { margin:0 0 12px; } p,li { color:var(--muted); line-height:1.6; } ul { margin:0; padding-left:18px; } pre { margin:0; overflow:auto; background:#07100e; border:1px solid var(--line); border-radius:14px; padding:14px; color:var(--accent); } @media (max-width:960px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Developers</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <section class="grid">
+      <div class="panel"><h1>API v1</h1><ul><li><code>GET /applications</code></li><li><code>GET /applications/{id}</code></li><li><code>GET /applications/{id}/history</code></li><li><code>GET /applications/{id}/documents</code></li><li><code>GET /official-context/summary</code></li><li><code>POST /watchlists</code></li><li><code>GET /watchlists/{id}/changes</code></li><li><code>GET /signals/high-priority</code></li></ul></div>
+      <div class="panel"><h2>Auth</h2><p>Use session bearer tokens for browser flows or <code>X-API-Key</code> for machine clients.</p><pre>POST /auth/login
+{
+  "email": "demo@plansignal.local",
+  "password": "plansignal-demo-password"
+}</pre></div>
+      <div class="panel"><h2>Example Query</h2><pre>GET /applications?area_id=E60000065&amp;keyword=dwelling
+X-API-Key: plansignal-demo-key</pre></div>
+      <div class="panel"><h2>Response Focus</h2><p>Responses center on normalized application, authority, site, actor, events, scores, documents, and official-source metadata.</p></div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Product</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --panel-2:#13231f; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1240px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; } .grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; } .panel { padding:22px; } h1,h2 { margin:0 0 12px; } p,li { color:var(--muted); line-height:1.6; } ul { margin:0; padding-left:18px; } .cmd { background:#07100e; border:1px solid var(--line); border-radius:14px; padding:14px; color:var(--accent); } @media (max-width:960px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Product</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <section class="panel" style="margin-bottom:22px;"><h1>PlanSignal Monitor</h1><p>V1 product for planning consultancies and land buyers. Focus: watch target England geographies, surface relevant applications, explain change, and reduce noisy manual review.</p></section>
+    <section class="grid">
+      <div class="panel"><h2>What Users Can Do</h2><ul><li>Filter live official planning applications by authority, keyword, status, and proposal class.</li><li>Review scored signals with materiality and relevance guidance.</li><li>Inspect official Article 4 and brownfield context side-by-side.</li><li>Create watchlists and test alert workflows.</li><li>Mint API keys and move same data into their own tooling.</li></ul></div>
+      <div class="panel"><h2>Moat Layer</h2><ul><li>Normalization across inconsistent public source structures.</li><li>Context packaging for brownfield and policy-control overlays.</li><li>Operational delivery into dashboard, API, and future alerts.</li><li>Commercial prioritization instead of flat record dumps.</li></ul></div>
+      <div class="panel"><h2>Current Live Inputs</h2><ul><li>Planning applications</li><li>Local planning authority catalogue</li><li>Article 4 directions</li><li>Brownfield land</li></ul></div>
+      <div class="panel"><h2>Near-Term Adds</h2><ul><li>Developer agreements</li><li>Green belt overlays</li><li>Richer application documents</li><li>Email and webhook delivery</li></ul></div>
+    </section>
+    <section class="panel" style="margin-top:22px;"><div class="cmd">GET /applications
+GET /signals/high-priority
+GET /official-context/summary
+POST /watchlists
+POST /screen/sites</div></section>
+  </div>
+</body>
+</html>

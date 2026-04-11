@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Playground</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1200px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,select,button,textarea,pre { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .grid { display:grid; grid-template-columns:0.9fr 1.1fr; gap:22px; } .panel { padding:22px; } .controls { display:grid; gap:12px; } h1,h2 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,select,textarea,button { width:100%; padding:14px; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } pre { margin:0; padding:16px; min-height:420px; overflow:auto; color:var(--accent); white-space:pre-wrap; } @media (max-width:960px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Playground</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Live endpoint tester</h1>
+        <p>Quick browser-side tester for public and authenticated PlanSignal routes.</p>
+        <div class="controls">
+          <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
+          <select id="route">
+            <option value="/health">GET /health</option>
+            <option value="/authorities">GET /authorities</option>
+            <option value="/applications">GET /applications</option>
+            <option value="/signals/high-priority">GET /signals/high-priority</option>
+            <option value="/official-context/summary">GET /official-context/summary</option>
+            <option value="/dashboard/summary">GET /dashboard/summary</option>
+          </select>
+          <input id="query" placeholder="Optional query string, e.g. area_id=E60000065&keyword=dwelling">
+          <button id="runBtn">Run Request</button>
+        </div>
+        <div class="meta">Protected routes use header <code>X-API-Key</code>.</div>
+      </section>
+      <section class="panel">
+        <h2>Response</h2>
+        <pre id="output">// response appears here</pre>
+      </section>
+    </div>
+  </div>
+  <script>
+    async function runRequest() {
+      const route = document.getElementById("route").value;
+      const query = document.getElementById("query").value.trim();
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const url = query ? `${route}?${query}` : route;
+      const response = await fetch(url, {
+        headers: apiKey ? { "X-API-Key": apiKey } : {}
+      });
+      const text = await response.text();
+      document.getElementById("output").textContent = `HTTP ${response.status}\n\n${text}`;
+    }
+    document.getElementById("runBtn").addEventListener("click", () => runRequest().catch((error) => {
+      document.getElementById("output").textContent = `Request failed\n\n${error.message}`;
+    }));
+  </script>
+</body>
+</html>

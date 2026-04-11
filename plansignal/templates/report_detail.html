@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Report Detail</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; --warn:#ffd166; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1320px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,button { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .grid { display:grid; grid-template-columns:0.7fr 1.3fr; gap:22px; } .panel { padding:22px; } .controls { display:grid; gap:12px; } .list { display:grid; gap:10px; max-height:620px; overflow:auto; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } h1,h2 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,button { width:100%; padding:14px; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .score { color:var(--warn); margin-top:6px; } @media (max-width:960px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Report Detail</div><div class="links"><a href="/">Home</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Saved snapshot</h1>
+        <div class="controls">
+          <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
+          <button id="loadBtn">Load Report</button>
+        </div>
+        <div id="meta" class="meta">Waiting for load.</div>
+      </section>
+      <section class="panel">
+        <h2>Applications and signals</h2>
+        <div id="content" class="list"></div>
+      </section>
+    </div>
+  </div>
+  <script>
+    async function loadReport() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const reportId = window.location.pathname.split("/").pop();
+      const response = await fetch(`/reports/saved/${reportId}`, { headers: { "X-API-Key": apiKey } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      document.getElementById("meta").textContent = `${data.report.name} | apps ${data.report.application_count} | signals ${data.report.signal_count} | area ${data.report.area_id || "all"} | keyword ${data.report.keyword || "none"}`;
+      const target = document.getElementById("content");
+      target.innerHTML = "";
+      for (const signal of data.signals) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${signal.address}</strong><div>${signal.summary}</div><div class="score">${signal.priority_reason} | relevance ${signal.relevance_score.toFixed(2)}</div>`;
+        target.appendChild(div);
+      }
+      for (const app of data.applications) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${app.site.address}</strong><div>${app.proposal_text}</div><div class="meta">${app.authority.name} | ${app.status} | ${app.proposal_category}</div>`;
+        target.appendChild(div);
+      }
+      if (!data.signals.length && !data.applications.length) target.innerHTML = '<div class="item">No records in this saved report.</div>';
+    }
+    document.getElementById("loadBtn").addEventListener("click", () => loadReport().catch((error) => {
+      document.getElementById("meta").textContent = `Load failed: ${error.message}`;
+    }));
+  </script>
+</body>
+</html>

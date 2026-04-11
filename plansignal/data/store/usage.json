@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-04-11T15:28:25.841662Z",
+  "counters": {
+    "application_list_requests": 1,
+    "watchlist_create_requests": 1,
+    "watchlist_change_requests": 1,
+    "high_priority_signal_requests": 1,
+    "site_screen_requests": 1,
+    "natural_language_query_requests": 1
+  }
+}

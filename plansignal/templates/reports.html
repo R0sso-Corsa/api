@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Reports</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; --warn:#ffd166; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1240px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,button,pre { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .grid { display:grid; grid-template-columns:0.8fr 1.2fr; gap:22px; } .panel { padding:22px; } .controls { display:grid; gap:12px; } h1,h2,h3 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,button,textarea,select { width:100%; padding:14px; color:var(--text); font:inherit; background:var(--panel); border:1px solid var(--line); border-radius:18px; } textarea { min-height:84px; resize:vertical; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } pre { margin:0; padding:16px; min-height:320px; overflow:auto; color:var(--accent); white-space:pre-wrap; background:var(--panel); border:1px solid var(--line); border-radius:18px; } .row { display:flex; gap:12px; flex-wrap:wrap; } .list { display:grid; gap:10px; max-height:260px; overflow:auto; margin-top:14px; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } @media (max-width:960px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Reports</div><div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Exports and summaries</h1>
+        <div class="controls">
+          <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
+          <input id="areaId" placeholder="Optional area id, e.g. E60000065">
+          <input id="keyword" placeholder="Optional keyword, e.g. dwelling">
+          <input id="reportName" value="Weekly monitoring snapshot" placeholder="Saved report name">
+          <textarea id="reportNotes" placeholder="Optional report notes"></textarea>
+          <button id="loadBtn">Load Summary</button>
+          <div class="row">
+            <button id="appsBtn">Download Applications CSV</button>
+            <button id="signalsBtn">Download Signals CSV</button>
+          </div>
+          <button id="saveBtn">Save Report Snapshot</button>
+          <h3>Schedule delivery</h3>
+          <input id="scheduleName" value="Weekly report email" placeholder="Schedule name">
+          <input id="scheduleEmail" placeholder="Delivery email">
+          <select id="scheduleFrequency">
+            <option value="weekly" selected>Weekly</option>
+            <option value="daily">Daily</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <button id="scheduleBtn">Create Schedule</button>
+        </div>
+        <div id="status" class="meta">No report loaded.</div>
+        <div id="savedReports" class="list"></div>
+        <div id="scheduledReports" class="list"></div>
+        <div id="outbox" class="list"></div>
+      </section>
+      <section class="panel">
+        <h2>Summary output</h2>
+        <pre id="output">// report summary appears here</pre>
+      </section>
+    </div>
+  </div>
+  <script>
+    async function loadSummary() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/reports/summary", { headers: { "X-API-Key": apiKey } });
+      const text = await response.text();
+      document.getElementById("output").textContent = text;
+      document.getElementById("status").textContent = `Summary request: HTTP ${response.status}`;
+      await loadSavedReports();
+    }
+    async function downloadCsv(path, filename) {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch(path, { headers: { "X-API-Key": apiKey } });
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    async function saveReport() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/reports/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify({
+          name: document.getElementById("reportName").value,
+          notes: document.getElementById("reportNotes").value,
+          area_id: document.getElementById("areaId").value || null,
+          keyword: document.getElementById("keyword").value || null
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      document.getElementById("status").textContent = `Saved report ${data.report_id}`;
+      await loadSavedReports();
+    }
+    async function loadSavedReports() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/reports/saved", { headers: { "X-API-Key": apiKey } });
+      const data = await response.json();
+      const target = document.getElementById("savedReports");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<a href="/reports/${item.report_id}">${item.name}</a><div>${item.report_id} | apps ${item.application_count} | signals ${item.signal_count}</div>`;
+        target.appendChild(div);
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No saved reports yet.</div>';
+      await loadScheduledReports();
+      await loadOutbox();
+    }
+    async function createSchedule() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/reports/scheduled", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify({
+          name: document.getElementById("scheduleName").value,
+          delivery_email: document.getElementById("scheduleEmail").value,
+          frequency: document.getElementById("scheduleFrequency").value,
+          area_id: document.getElementById("areaId").value || null,
+          keyword: document.getElementById("keyword").value || null
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      document.getElementById("status").textContent = `Created schedule ${data.schedule_id}`;
+      await loadScheduledReports();
+    }
+    async function runSchedule(scheduleId) {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch(`/reports/scheduled/${scheduleId}/run`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      document.getElementById("status").textContent = `Queued email ${data.queued_email.email_id} from schedule ${scheduleId}`;
+      await loadScheduledReports();
+      await loadOutbox();
+    }
+    async function loadScheduledReports() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/reports/scheduled", { headers: { "X-API-Key": apiKey } });
+      const data = await response.json();
+      const target = document.getElementById("scheduledReports");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${item.name}</strong><div>${item.frequency} -> ${item.delivery_email}</div><div>${item.schedule_id}</div><div>last run ${item.last_run_at || "never"}</div><button data-schedule-run="${item.schedule_id}">Run Now</button>`;
+        target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-schedule-run]")) {
+        button.addEventListener("click", () => runSchedule(button.dataset.scheduleRun).catch((error) => {
+          document.getElementById("status").textContent = `Run failed: ${error.message}`;
+        }));
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No schedules yet.</div>';
+    }
+    async function loadOutbox() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      const response = await fetch("/email/outbox", { headers: { "X-API-Key": apiKey } });
+      const data = await response.json();
+      const target = document.getElementById("outbox");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${item.subject}</strong><div>${item.recipient}</div><div>${item.body_preview}</div>`;
+        target.appendChild(div);
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No queued emails yet.</div>';
+    }
+    document.getElementById("loadBtn").addEventListener("click", () => loadSummary().catch((error) => {
+      document.getElementById("status").textContent = `Summary failed: ${error.message}`;
+    }));
+    document.getElementById("appsBtn").addEventListener("click", () => downloadCsv("/exports/applications.csv", "plansignal-applications.csv").catch((error) => {
+      document.getElementById("status").textContent = `Applications export failed: ${error.message}`;
+    }));
+    document.getElementById("signalsBtn").addEventListener("click", () => downloadCsv("/exports/signals.csv", "plansignal-signals.csv").catch((error) => {
+      document.getElementById("status").textContent = `Signals export failed: ${error.message}`;
+    }));
+    document.getElementById("saveBtn").addEventListener("click", () => saveReport().catch((error) => {
+      document.getElementById("status").textContent = `Save failed: ${error.message}`;
+    }));
+    document.getElementById("scheduleBtn").addEventListener("click", () => createSchedule().catch((error) => {
+      document.getElementById("status").textContent = `Schedule failed: ${error.message}`;
+    }));
+  </script>
+</body>
+</html>

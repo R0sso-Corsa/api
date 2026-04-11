@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Dashboard</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --panel-2:#13231f; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; --warn:#ffd166; --official-bg:rgba(82,242,179,0.12); --official-ink:#8fffd1; --local-bg:rgba(123,216,255,0.12); --local-ink:#9fe7ff; }
+    * { box-sizing:border-box; } body { margin:0; background:radial-gradient(circle at top, rgba(82,242,179,0.08), transparent 24%), var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1380px; margin:0 auto; padding:24px 18px 48px; } .nav,.panel,.item,input,select,button { border:1px solid var(--line); border-radius:16px; } .nav,.panel,.item { background:var(--panel); }
+    .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .brand { color:var(--accent); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; } .links { display:flex; gap:14px; flex-wrap:wrap; }
+    .panel { padding:20px; } .hero { margin-bottom:22px; } .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:0.12em; font-size:12px; margin-bottom:8px; } h1,h2 { margin:0 0 12px; } p,.meta,.muted { color:var(--muted); line-height:1.6; }
+    .auth-grid,.two-col,.tri-col { display:grid; gap:22px; } .auth-grid { grid-template-columns:1fr 1fr; margin-bottom:22px; } .two-col { grid-template-columns:1.35fr 0.65fr; margin-bottom:22px; } .tri-col { grid-template-columns:repeat(3, 1fr); margin-bottom:22px; }
+    .toolbar,.auth-toolbar { display:grid; gap:12px; } .toolbar { grid-template-columns:1.1fr 1fr 1fr auto auto; } .auth-toolbar { grid-template-columns:1fr 1fr auto; }
+    input,select,button { width:100%; padding:13px 14px; background:#091412; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .ghost { background:transparent; }
+    .stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:14px; } .stat { padding:16px; background:var(--panel-2); border:1px solid var(--line); border-radius:14px; } .stat strong { display:block; font-size:1.7rem; color:var(--accent); }
+    .list { display:grid; gap:12px; } .item { padding:14px; background:var(--panel-2); } .score { color:var(--warn); margin-top:8px; font-weight:700; }
+    .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.76rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; } .badge-official { background:var(--official-bg); color:var(--official-ink); } .badge-local { background:var(--local-bg); color:var(--local-ink); }
+    .scroll-list { max-height:520px; overflow-y:auto; padding-right:6px; } .scroll-list::-webkit-scrollbar { width:10px; } .scroll-list::-webkit-scrollbar-thumb { background:rgba(82,242,179,0.24); border-radius:999px; }
+    details { margin-top:10px; border-top:1px solid var(--line); padding-top:10px; } summary { cursor:pointer; color:var(--accent); } .code { display:inline-block; background:#07100e; border:1px solid var(--line); border-radius:12px; padding:8px 10px; color:var(--accent); word-break:break-all; } .inline-row { display:flex; gap:12px; flex-wrap:wrap; }
+    pre.chart { margin:0; padding:14px; background:#07100e; border:1px solid var(--line); border-radius:14px; color:var(--accent); overflow:auto; min-height:220px; }
+    @media (max-width:1100px) { .two-col,.tri-col,.toolbar,.auth-grid,.auth-toolbar,.stats { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav">
+      <div class="brand">PlanSignal // Dashboard</div>
+      <div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div>
+    </nav>
+
+    <section class="panel hero">
+      <div class="eyebrow">Live Monitoring Console</div>
+      <h1>Official England planning feed console.</h1>
+      <p>Terminal-style operator view for live official planning applications, authority filters, high-priority signals, context overlays, watchlists, and API access.</p>
+      <div class="inline-row"><span id="lastUpdated" class="muted">Last updated: never</span><span id="sessionStatus" class="muted">No active session.</span><span id="authorityCount" class="muted">Authorities: loading</span></div>
+    </section>
+
+    <div class="auth-grid">
+      <section class="panel"><h2>Session Login</h2><div class="auth-toolbar"><input id="email" value="" placeholder="Email"><input id="password" value="" type="password" placeholder="Password"><button id="loginBtn">Sign In</button></div><div id="authStatus" class="meta">Not signed in.</div></section>
+      <section class="panel"><h2>API Key Mint</h2><div class="auth-toolbar"><input id="keyLabel" value="Dashboard key" placeholder="API key label"><input id="apiKey" value="" placeholder="Created API key appears here"><button id="createKeyBtn">Create Key</button></div><div id="newKey" class="meta">Mint key after login. Machine clients use <span class="code">X-API-Key</span>.</div></section>
+    </div>
+
+    <section class="panel" style="margin-bottom:22px;"><h2>Filters</h2><div class="toolbar"><input id="keyword" value="" placeholder="Keyword filter"><select id="borough"><option value="">All England authorities</option></select><select id="refreshInterval"><option value="0">Manual refresh</option><option value="30000">Auto refresh 30s</option><option value="60000" selected>Auto refresh 60s</option><option value="120000">Auto refresh 120s</option></select><button id="refreshBtn">Refresh</button><button id="applyAutoBtn" class="ghost">Apply Auto</button></div></section>
+
+    <div class="two-col">
+      <section class="panel"><h2>Signal Board</h2><div class="stats"><div class="stat"><strong id="applicationCount">0</strong><span class="muted">applications</span></div><div class="stat"><strong id="signalCount">0</strong><span class="muted">signals</span></div><div class="stat"><strong id="watchCount">0</strong><span class="muted">watchlists</span></div><div class="stat"><strong id="keyCount">0</strong><span class="muted">api keys</span></div></div><div id="signalList" class="list scroll-list"></div></section>
+      <section class="panel"><h2>Operator Profile</h2><div id="meCard" class="list"></div><h2 style="margin-top:24px;">Usage Snapshot</h2><div id="usageList" class="list scroll-list"></div></section>
+    </div>
+
+    <div class="tri-col">
+      <section class="panel"><h2>Recent Applications</h2><div id="applicationList" class="list scroll-list"></div></section>
+      <section class="panel"><h2>Watchlists</h2><div id="watchlistList" class="list scroll-list"></div></section>
+      <section class="panel"><h2>Borough Pulse</h2><div id="benchmarkList" class="list scroll-list"></div></section>
+    </div>
+
+    <div class="tri-col">
+      <section class="panel"><h2>Article 4 Context</h2><div id="article4List" class="list scroll-list"></div></section>
+      <section class="panel"><h2>Brownfield Context</h2><div id="brownfieldList" class="list scroll-list"></div></section>
+      <section class="panel"><h2>API Keys</h2><div id="apiKeyList" class="list scroll-list"></div></section>
+    </div>
+
+    <div class="two-col">
+      <section class="panel"><h2>Status Chart</h2><pre id="statusChart" class="chart">// waiting for data</pre></section>
+      <section class="panel"><h2>Category Chart</h2><pre id="categoryChart" class="chart">// waiting for data</pre></section>
+    </div>
+  </div>
+
+  <script>
+    const emailEl = document.getElementById("email"), passwordEl = document.getElementById("password"), loginBtn = document.getElementById("loginBtn"), authStatusEl = document.getElementById("authStatus"), keyLabelEl = document.getElementById("keyLabel"), apiKeyEl = document.getElementById("apiKey"), createKeyBtn = document.getElementById("createKeyBtn"), newKeyEl = document.getElementById("newKey"), keywordEl = document.getElementById("keyword"), boroughEl = document.getElementById("borough"), refreshBtn = document.getElementById("refreshBtn"), applyAutoBtn = document.getElementById("applyAutoBtn"), refreshIntervalEl = document.getElementById("refreshInterval"), lastUpdatedEl = document.getElementById("lastUpdated"), sessionStatusEl = document.getElementById("sessionStatus"), authorityCountEl = document.getElementById("authorityCount");
+    let bearerToken = "", refreshTimer = null;
+    function authHeaders() { if (bearerToken) return { "Authorization": `Bearer ${bearerToken}` }; if (apiKeyEl.value) return { "X-API-Key": apiKeyEl.value }; return {}; }
+    function badgeClass(kind) { return kind === "official" ? "badge-official" : "badge-local"; }
+    async function fetchJson(path, options = {}) { const response = await fetch(path, { ...options, headers: { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) } }); if (!response.ok) { const detail = await response.text(); throw new Error(`${response.status} ${response.statusText} ${detail}`); } return response.json(); }
+    function renderList(targetId, items, renderFn, emptyMessage) { const target = document.getElementById(targetId); target.innerHTML = ""; if (!items.length) { target.innerHTML = `<div class="item muted">${emptyMessage}</div>`; return; } for (const item of items) { const wrapper = document.createElement("div"); wrapper.className = "item"; wrapper.innerHTML = renderFn(item); target.appendChild(wrapper); } }
+    function renderBarChart(targetId, values, title) {
+      const entries = Object.entries(values).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      if (!entries.length) { document.getElementById(targetId).textContent = `// no ${title.toLowerCase()} data`; return; }
+      const maxValue = Math.max(...entries.map(([, value]) => value), 1);
+      const lines = [`// ${title}`];
+      for (const [label, value] of entries) {
+        const width = Math.max(1, Math.round((value / maxValue) * 24));
+        lines.push(`${label.padEnd(16, " ").slice(0, 16)} ${"█".repeat(width)} ${value}`);
+      }
+      document.getElementById(targetId).textContent = lines.join("\n");
+    }
+    async function loadAuthorities() { const payload = await fetchJson("/authorities", { headers: {} }); authorityCountEl.textContent = `Authorities: ${payload.count}`; const current = boroughEl.value; boroughEl.innerHTML = '<option value="">All England authorities</option>'; for (const authority of payload.authorities) { const option = document.createElement("option"); option.value = authority.name; option.textContent = authority.name; boroughEl.appendChild(option); } if (current) boroughEl.value = current; }
+    function queryString() { const params = new URLSearchParams(); if (boroughEl.value) params.set("area_id", boroughEl.value); if (keywordEl.value) params.set("keyword", keywordEl.value); const qs = params.toString(); return qs ? `?${qs}` : ""; }
+    async function login() { const payload = await fetchJson("/auth/login", { method: "POST", headers: {}, body: JSON.stringify({ email: emailEl.value, password: passwordEl.value }) }); bearerToken = payload.access_token; authStatusEl.textContent = `Signed in as ${payload.user_email} in ${payload.organization_name}.`; sessionStatusEl.innerHTML = `<span style="color: var(--accent)">Session active</span>`; await refresh(); }
+    async function createKey() { const payload = await fetchJson("/api-keys", { method: "POST", body: JSON.stringify({ label: keyLabelEl.value }) }); apiKeyEl.value = payload.api_key; newKeyEl.innerHTML = `New API key:<div class="code">${payload.api_key}</div>`; await refresh(); }
+    async function refresh() {
+      const summary = await fetchJson(`/dashboard/summary${queryString()}`);
+      document.getElementById("applicationCount").textContent = summary.applications.length; document.getElementById("signalCount").textContent = summary.signals.length; document.getElementById("watchCount").textContent = summary.watchlists.length; document.getElementById("keyCount").textContent = summary.api_keys.length;
+      lastUpdatedEl.textContent = `Last updated: ${new Date(summary.generated_at).toLocaleString()}`;
+      authorityCountEl.textContent = `Authorities loaded • apps ${summary.data_sources.planning_applications.loaded_count}/${summary.data_sources.planning_applications.total_available ?? "?"} • article4 ${summary.data_sources.article_4.loaded_count}/${summary.data_sources.article_4.total_available ?? "?"} • brownfield ${summary.data_sources.brownfield.loaded_count}/${summary.data_sources.brownfield.total_available ?? "?"}`;
+      renderList("meCard", [summary.me], (item) => `<strong>${item.user ? item.user.full_name : item.context.organization_name}</strong><div class="meta">${item.user ? item.user.email : "API key context"} • ${item.context.organization_name}</div><div class="score">Auth ${item.context.auth_method}</div>`, "No profile loaded.");
+      renderList("signalList", summary.signals, (signal) => `<div><span class="badge ${badgeClass(signal.source_kind)}">${signal.source_kind}</span></div><strong>${signal.address}</strong><div>${signal.summary}</div><div class="meta">${signal.borough || "England"} • ${signal.priority_reason}</div><div class="score">Relevance ${signal.relevance_score.toFixed(2)} • Materiality ${signal.change_materiality_score.toFixed(2)}</div><details><summary>More context</summary><div class="meta">Application ${signal.application_id} • Ref ${signal.source_reference}</div><div class="meta">${signal.source_system}</div></details>`, "No signals yet.");
+      renderList("applicationList", summary.applications, (app) => `<div><span class="badge ${badgeClass(app.source_kind)}">${app.source_kind}</span></div><strong>${app.site.address}</strong><div>${app.proposal_text}</div><div class="meta">${app.authority.name} • ${app.status} • ${app.proposal_category}</div><div class="score">${app.source_reference}</div><details><summary>More context</summary><div class="meta">Decision ${app.decision || "Pending"} • Submitted ${app.submitted_date || "Unknown"} • Decision date ${app.decision_date || "Unknown"}</div><div class="meta">Applicant ${app.applicant ? app.applicant.name : "Unknown"} • Docs ${app.documents.length}</div><div class="meta">Tags ${(app.tags || []).join(", ") || "None"}</div><div class="meta">Relevance ${app.scores.relevance_score.toFixed(2)} • Commercial ${app.scores.commercial_potential_score.toFixed(2)} • Materiality ${app.scores.change_materiality_score.toFixed(2)} • Confidence ${app.scores.confidence_score.toFixed(2)}</div></details>`, "No applications match current filter.");
+      renderList("watchlistList", summary.watchlists, (watch) => `<div><span class="badge badge-local">local</span></div><strong>${watch.name}</strong><div class="meta">${watch.customer_name} • ${watch.delivery_mode}</div><div class="score">${(watch.filters.area_ids || []).join(", ") || "all areas"}</div>`, "No watchlists created yet.");
+      renderList("benchmarkList", summary.benchmark, (row) => `<strong>${row.area_name}</strong><div class="meta">${row.application_count} apps • ${row.approved_count} approved • ${row.major_development_count} major</div><div class="score">Average relevance ${row.average_relevance_score.toFixed(2)}</div>`, "No borough benchmark data.");
+      renderList("apiKeyList", summary.api_keys, (item) => `<div><span class="badge badge-local">local</span></div><strong>${item.label}</strong><div class="meta">${item.key_prefix} • created ${new Date(item.created_at).toLocaleString()}</div>`, "No API keys yet.");
+      const usageItems = Object.entries(summary.usage.counters || {}).map(([metric, value]) => ({ metric, value }));
+      renderList("usageList", usageItems, (item) => `<div><span class="badge badge-local">local</span></div><strong>${item.metric}</strong><div class="meta">${item.value} calls</div>`, "No usage recorded yet.");
+      renderList("article4List", summary.official_context.article_4.recent, (item) => `<div><span class="badge badge-official">official</span></div><strong>${item.name}</strong><div>${item.description || "No description supplied."}</div><div class="meta">Ref ${item.reference || "Unknown"} • Start ${item.start_date || "Unknown"} • Quality ${item.quality || "Unknown"}</div>${item.documentation_url ? `<a href="${item.documentation_url}" target="_blank" rel="noreferrer">Open source record</a>` : ""}`, "No official Article 4 records loaded.");
+      renderList("brownfieldList", summary.official_context.brownfield.recent, (item) => `<div><span class="badge badge-official">official</span></div><strong>${item.site_address || item.name}</strong><div class="meta">Ref ${item.reference || "Unknown"} • ${item.hectares || "Unknown"} ha • Deliverable ${item.deliverable || "Unknown"}</div><div class="score">Homes ${item.minimum_net_dwellings || "?"} to ${item.maximum_net_dwellings || "?"}</div>${item.site_plan_url ? `<a href="${item.site_plan_url}" target="_blank" rel="noreferrer">Open source record</a>` : ""}`, "No official brownfield records loaded.");
+      const statusCounts = {}, categoryCounts = {};
+      for (const app of summary.applications) {
+        statusCounts[app.status] = (statusCounts[app.status] || 0) + 1;
+        categoryCounts[app.proposal_category] = (categoryCounts[app.proposal_category] || 0) + 1;
+      }
+      renderBarChart("statusChart", statusCounts, "Status Distribution");
+      renderBarChart("categoryChart", categoryCounts, "Proposal Category Distribution");
+    }
+    function applyAutoRefresh() { if (refreshTimer) clearInterval(refreshTimer); const interval = Number(refreshIntervalEl.value); if (interval > 0) refreshTimer = setInterval(() => refresh().catch((error) => console.error("Auto refresh failed", error)), interval); }
+    loginBtn.addEventListener("click", () => login().catch((error) => alert(`Login failed: ${error.message}`)));
+    createKeyBtn.addEventListener("click", () => createKey().catch((error) => alert(`API key creation failed: ${error.message}`)));
+    refreshBtn.addEventListener("click", () => refresh().catch((error) => alert(`Dashboard load failed: ${error.message}`)));
+    applyAutoBtn.addEventListener("click", () => { applyAutoRefresh(); refresh().catch((error) => alert(`Dashboard load failed: ${error.message}`)); });
+    loadAuthorities().catch((error) => { authorityCountEl.textContent = `Authorities load failed: ${error.message}`; });
+  </script>
+</body>
+</html>

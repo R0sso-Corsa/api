@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Planning Intelligence For England</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --panel-2:#13231f; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; --warn:#ffd166; }
+    * { box-sizing:border-box; } body { margin:0; background:radial-gradient(circle at top, rgba(82,242,179,0.08), transparent 25%), var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; }
+    a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1240px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel { background:var(--panel); border:1px solid var(--line); border-radius:18px; box-shadow:0 0 0 1px rgba(82,242,179,0.04) inset; }
+    .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .brand { color:var(--accent); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; } .links { display:flex; gap:16px; flex-wrap:wrap; }
+    .hero { display:grid; grid-template-columns:1.2fr 0.8fr; gap:22px; margin-bottom:22px; } .panel { padding:22px; } .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:0.12em; font-size:12px; margin-bottom:10px; }
+    h1,h2 { margin:0 0 12px; } h1 { font-size:clamp(2.2rem, 5vw, 4rem); line-height:0.95; } p { color:var(--muted); line-height:1.6; }
+    .terminal { background:#07100e; border:1px solid var(--line); border-radius:14px; padding:16px; color:var(--accent); white-space:pre-wrap; }
+    .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; } .metric { font-size:2rem; color:var(--accent); font-weight:700; } .label { color:var(--muted); text-transform:uppercase; font-size:12px; letter-spacing:0.08em; }
+    .list { display:grid; gap:10px; } .item { padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--panel-2); } .cta-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .button { display:inline-block; padding:12px 16px; border-radius:12px; border:1px solid var(--line); } .button.primary { background:var(--accent); color:#052019; font-weight:700; }
+    @media (max-width:960px) { .hero, .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav">
+      <div class="brand">PlanSignal // England</div>
+      <div class="links"><a href="/">Home</a><a href="/product">Product</a><a href="/pricing">Pricing</a><a href="/developers">Developers</a><a href="/sources">Sources</a><a href="/playground">Playground</a><a href="/contact">Contact</a><a href="/map">Map</a><a href="/reports">Reports</a><a href="/dashboard">Dashboard</a></div>
+    </nav>
+    <section class="hero">
+      <div class="panel">
+        <div class="eyebrow">Planning Intelligence Subscription API</div>
+        <h1>Decision-ready planning signals. Not raw data dump.</h1>
+        <p>PlanSignal turns England planning activity into monitored, normalized, scored, and delivered commercial intelligence for land buyers, planning consultants, and architecture teams.</p>
+        <div class="cta-row"><a class="button primary" href="/dashboard">Open Dashboard</a><a class="button" href="/developers">View API Surface</a><a class="button" href="/sources">Inspect Data Sources</a></div>
+      </div>
+      <div class="panel"><div class="terminal">$ plansignal status
+[ok] live official planning applications feed
+[ok] official England authority catalogue
+[ok] article-4 context overlay
+[ok] brownfield context overlay
+[ok] watchlists, auth, usage, api keys
+[next] richer documents, billing, webhook delivery</div></div>
+    </section>
+    <section class="grid">
+      <div class="panel"><div class="label">Core Job</div><div class="metric">Monitor</div><p>Track target geographies, named applicants, proposal classes, and status transitions without manual council-portal checking.</p></div>
+      <div class="panel"><div class="label">Commercial Layer</div><div class="metric">Enrich</div><p>Normalize inconsistent feeds, add context overlays, keep history, and surface signals that matter operationally.</p></div>
+      <div class="panel"><div class="label">Delivery</div><div class="metric">Ship</div><p>Serve same backend into API workflows, alerts, and dashboard review queues for paying users.</p></div>
+    </section>
+    <section class="panel" style="margin-top:22px;">
+      <h2>Why Buyers Pay</h2>
+      <div class="list">
+        <div class="item">Public access exists. Workflow compression does not.</div>
+        <div class="item">Missing one relevant planning change can cost far more than subscription fee.</div>
+        <div class="item">Real value comes from change detection, filters, scoring, and operational delivery.</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

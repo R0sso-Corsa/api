@@ -1,0 +1,22 @@
+[
+  {
+    "watchlist_id": "watch-465841e057",
+    "name": "Camden residential",
+    "customer_name": "Pilot Customer",
+    "delivery_mode": "dashboard",
+    "filters": {
+      "area_ids": [
+        "camden-cluster"
+      ],
+      "statuses": [],
+      "proposal_categories": [
+        "residential"
+      ],
+      "applicant_keywords": [],
+      "keywords": [],
+      "min_relevance_score": 0.6,
+      "changed_since": null
+    },
+    "created_at": "2026-04-11T15:28:25.794479Z"
+  }
+]

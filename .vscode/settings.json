@@ -1,3 +1,5 @@
 {
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "python.defaultInterpreterPath": "C:\\Users\\paron\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

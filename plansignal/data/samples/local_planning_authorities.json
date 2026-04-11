@@ -1,0 +1,2702 @@
+{
+  "source": "planning.data.gov.uk",
+  "count": 337,
+  "authorities": [
+    {
+      "entity": "626281",
+      "name": "Adur LPA",
+      "reference": "E60000281",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626019",
+      "name": "Allerdale LPA",
+      "reference": "E60000019",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626077",
+      "name": "Amber Valley LPA",
+      "reference": "E60000077",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626282",
+      "name": "Arun LPA",
+      "reference": "E60000282",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626106",
+      "name": "Ashfield LPA",
+      "reference": "E60000106",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626253",
+      "name": "Ashford LPA",
+      "reference": "E60000253",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626233",
+      "name": "Aylesbury Vale LPA",
+      "reference": "E60000233",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626183",
+      "name": "Babergh LPA",
+      "reference": "E60000183",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626202",
+      "name": "Barking and Dagenham LPA",
+      "reference": "E60000202",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626203",
+      "name": "Barnet LPA",
+      "reference": "E60000203",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626064",
+      "name": "Barnsley LPA",
+      "reference": "E60000064",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626020",
+      "name": "Barrow-in-Furness LPA",
+      "reference": "E60000020",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626154",
+      "name": "Basildon LPA",
+      "reference": "E60000154",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626242",
+      "name": "Basingstoke and Deane LPA",
+      "reference": "E60000242",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626107",
+      "name": "Bassetlaw LPA",
+      "reference": "E60000107",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626288",
+      "name": "Bath and North East Somerset LPA",
+      "reference": "E60000288",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626143",
+      "name": "Bedford LPA",
+      "reference": "E60000143",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626204",
+      "name": "Bexley LPA",
+      "reference": "E60000204",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626130",
+      "name": "Birmingham LPA",
+      "reference": "E60000130",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626085",
+      "name": "Blaby LPA",
+      "reference": "E60000085",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626013",
+      "name": "Blackburn with Darwen LPA",
+      "reference": "E60000013",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626014",
+      "name": "Blackpool LPA",
+      "reference": "E60000014",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626078",
+      "name": "Bolsover LPA",
+      "reference": "E60000078",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626025",
+      "name": "Bolton LPA",
+      "reference": "E60000025",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626092",
+      "name": "Boston LPA",
+      "reference": "E60000092",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626289",
+      "name": "Bournemouth, Christchurch and Poole LPA",
+      "reference": "E60000289",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626221",
+      "name": "Bracknell Forest LPA",
+      "reference": "E60000221",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626068",
+      "name": "Bradford LPA",
+      "reference": "E60000068",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626155",
+      "name": "Braintree LPA",
+      "reference": "E60000155",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626176",
+      "name": "Breckland LPA",
+      "reference": "E60000176",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626205",
+      "name": "Brent LPA",
+      "reference": "E60000205",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626156",
+      "name": "Brentwood LPA",
+      "reference": "E60000156",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626222",
+      "name": "Brighton and Hove LPA",
+      "reference": "E60000222",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626290",
+      "name": "Bristol, City of LPA",
+      "reference": "E60000290",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626177",
+      "name": "Broadland LPA",
+      "reference": "E60000177",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626206",
+      "name": "Bromley LPA",
+      "reference": "E60000206",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626137",
+      "name": "Bromsgrove LPA",
+      "reference": "E60000137",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626166",
+      "name": "Broxbourne LPA",
+      "reference": "E60000166",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626108",
+      "name": "Broxtowe LPA",
+      "reference": "E60000108",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626331",
+      "name": "Buckinghamshire LPA",
+      "reference": "E60000331",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626035",
+      "name": "Burnley LPA",
+      "reference": "E60000035",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626026",
+      "name": "Bury LPA",
+      "reference": "E60000026",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626069",
+      "name": "Calderdale LPA",
+      "reference": "E60000069",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626149",
+      "name": "Cambridge LPA",
+      "reference": "E60000149",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626188",
+      "name": "Camden LPA",
+      "reference": "E60000188",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626117",
+      "name": "Cannock Chase LPA",
+      "reference": "E60000117",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626254",
+      "name": "Canterbury LPA",
+      "reference": "E60000254",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626021",
+      "name": "Carlisle LPA",
+      "reference": "E60000021",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626157",
+      "name": "Castle Point LPA",
+      "reference": "E60000157",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626144",
+      "name": "Central Bedfordshire LPA",
+      "reference": "E60000144",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626086",
+      "name": "Charnwood LPA",
+      "reference": "E60000086",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626158",
+      "name": "Chelmsford LPA",
+      "reference": "E60000158",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626308",
+      "name": "Cheltenham LPA",
+      "reference": "E60000308",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626265",
+      "name": "Cherwell LPA",
+      "reference": "E60000265",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626015",
+      "name": "Cheshire East LPA",
+      "reference": "E60000015",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626016",
+      "name": "Cheshire West and Chester LPA",
+      "reference": "E60000016",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626079",
+      "name": "Chesterfield LPA",
+      "reference": "E60000079",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626283",
+      "name": "Chichester LPA",
+      "reference": "E60000283",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626234",
+      "name": "Chiltern LPA",
+      "reference": "E60000234",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626036",
+      "name": "Chorley LPA",
+      "reference": "E60000036",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626189",
+      "name": "City of London LPA",
+      "reference": "E60000189",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626159",
+      "name": "Colchester LPA",
+      "reference": "E60000159",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626022",
+      "name": "Copeland LPA",
+      "reference": "E60000022",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626099",
+      "name": "Corby LPA",
+      "reference": "E60000099",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626291",
+      "name": "Cornwall LPA",
+      "reference": "E60000291",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626309",
+      "name": "Cotswold LPA",
+      "reference": "E60000309",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626001",
+      "name": "County Durham LPA",
+      "reference": "E60000001",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626131",
+      "name": "Coventry LPA",
+      "reference": "E60000131",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626057",
+      "name": "Craven LPA",
+      "reference": "E60000057",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626284",
+      "name": "Crawley LPA",
+      "reference": "E60000284",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626207",
+      "name": "Croydon LPA",
+      "reference": "E60000207",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626334",
+      "name": "Cumberland LPA",
+      "reference": "E60000334",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626167",
+      "name": "Dacorum LPA",
+      "reference": "E60000167",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626002",
+      "name": "Darlington LPA",
+      "reference": "E60000002",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626255",
+      "name": "Dartford LPA",
+      "reference": "E60000255",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626318",
+      "name": "Dartmoor National Park LPA",
+      "reference": "E60000318",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626100",
+      "name": "Daventry LPA",
+      "reference": "E60000100",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626073",
+      "name": "Derby LPA",
+      "reference": "E60000073",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626080",
+      "name": "Derbyshire Dales LPA",
+      "reference": "E60000080",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626065",
+      "name": "Doncaster LPA",
+      "reference": "E60000065",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626292",
+      "name": "Dorset LPA",
+      "reference": "E60000292",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626256",
+      "name": "Dover LPA",
+      "reference": "E60000256",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626132",
+      "name": "Dudley LPA",
+      "reference": "E60000132",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626208",
+      "name": "Ealing LPA",
+      "reference": "E60000208",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626150",
+      "name": "East Cambridgeshire LPA",
+      "reference": "E60000150",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626300",
+      "name": "East Devon LPA",
+      "reference": "E60000300",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626243",
+      "name": "East Hampshire LPA",
+      "reference": "E60000243",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626168",
+      "name": "East Hertfordshire LPA",
+      "reference": "E60000168",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626093",
+      "name": "East Lindsey LPA",
+      "reference": "E60000093",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626101",
+      "name": "East Northamptonshire LPA",
+      "reference": "E60000101",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626052",
+      "name": "East Riding of Yorkshire LPA",
+      "reference": "E60000052",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626118",
+      "name": "East Staffordshire LPA",
+      "reference": "E60000118",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626184",
+      "name": "East Suffolk LPA",
+      "reference": "E60000184",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626237",
+      "name": "Eastbourne LPA",
+      "reference": "E60000237",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626244",
+      "name": "Eastleigh LPA",
+      "reference": "E60000244",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626328",
+      "name": "Ebbsfleet Development Corporation LPA",
+      "reference": "E60000328",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626023",
+      "name": "Eden LPA",
+      "reference": "E60000023",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626270",
+      "name": "Elmbridge LPA",
+      "reference": "E60000270",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626209",
+      "name": "Enfield LPA",
+      "reference": "E60000209",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626160",
+      "name": "Epping Forest LPA",
+      "reference": "E60000160",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626271",
+      "name": "Epsom and Ewell LPA",
+      "reference": "E60000271",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626081",
+      "name": "Erewash LPA",
+      "reference": "E60000081",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626301",
+      "name": "Exeter LPA",
+      "reference": "E60000301",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626319",
+      "name": "Exmoor National Park LPA",
+      "reference": "E60000319",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626245",
+      "name": "Fareham LPA",
+      "reference": "E60000245",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626151",
+      "name": "Fenland LPA",
+      "reference": "E60000151",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626257",
+      "name": "Folkestone and Hythe LPA",
+      "reference": "E60000257",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626310",
+      "name": "Forest of Dean LPA",
+      "reference": "E60000310",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626037",
+      "name": "Fylde LPA",
+      "reference": "E60000037",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626008",
+      "name": "Gateshead LPA",
+      "reference": "E60000008",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626109",
+      "name": "Gedling LPA",
+      "reference": "E60000109",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626311",
+      "name": "Gloucester LPA",
+      "reference": "E60000311",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626246",
+      "name": "Gosport LPA",
+      "reference": "E60000246",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626258",
+      "name": "Gravesham LPA",
+      "reference": "E60000258",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626178",
+      "name": "Great Yarmouth LPA",
+      "reference": "E60000178",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626210",
+      "name": "Greenwich LPA",
+      "reference": "E60000210",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626272",
+      "name": "Guildford LPA",
+      "reference": "E60000272",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626190",
+      "name": "Hackney LPA",
+      "reference": "E60000190",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626017",
+      "name": "Halton LPA",
+      "reference": "E60000017",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626058",
+      "name": "Hambleton LPA",
+      "reference": "E60000058",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626191",
+      "name": "Hammersmith and Fulham LPA",
+      "reference": "E60000191",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626087",
+      "name": "Harborough LPA",
+      "reference": "E60000087",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626192",
+      "name": "Haringey LPA",
+      "reference": "E60000192",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626161",
+      "name": "Harlow LPA",
+      "reference": "E60000161",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626059",
+      "name": "Harrogate LPA",
+      "reference": "E60000059",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626211",
+      "name": "Harrow LPA",
+      "reference": "E60000211",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626247",
+      "name": "Hart LPA",
+      "reference": "E60000247",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626003",
+      "name": "Hartlepool LPA",
+      "reference": "E60000003",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626238",
+      "name": "Hastings LPA",
+      "reference": "E60000238",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626248",
+      "name": "Havant LPA",
+      "reference": "E60000248",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626212",
+      "name": "Havering LPA",
+      "reference": "E60000212",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626113",
+      "name": "Herefordshire, County of LPA",
+      "reference": "E60000113",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626169",
+      "name": "Hertsmere LPA",
+      "reference": "E60000169",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626082",
+      "name": "High Peak LPA",
+      "reference": "E60000082",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626213",
+      "name": "Hillingdon LPA",
+      "reference": "E60000213",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626088",
+      "name": "Hinckley and Bosworth LPA",
+      "reference": "E60000088",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626285",
+      "name": "Horsham LPA",
+      "reference": "E60000285",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626214",
+      "name": "Hounslow LPA",
+      "reference": "E60000214",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626152",
+      "name": "Huntingdonshire LPA",
+      "reference": "E60000152",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626038",
+      "name": "Hyndburn LPA",
+      "reference": "E60000038",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626185",
+      "name": "Ipswich LPA",
+      "reference": "E60000185",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626223",
+      "name": "Isle of Wight LPA",
+      "reference": "E60000223",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626293",
+      "name": "Isles of Scilly LPA",
+      "reference": "E60000293",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626193",
+      "name": "Islington LPA",
+      "reference": "E60000193",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626194",
+      "name": "Kensington and Chelsea LPA",
+      "reference": "E60000194",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626102",
+      "name": "Kettering LPA",
+      "reference": "E60000102",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626053",
+      "name": "Kingston upon Hull, City of LPA",
+      "reference": "E60000053",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626215",
+      "name": "Kingston upon Thames LPA",
+      "reference": "E60000215",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626179",
+      "name": "King\u2019s Lynn and West Norfolk LPA",
+      "reference": "E60000179",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626070",
+      "name": "Kirklees LPA",
+      "reference": "E60000070",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626047",
+      "name": "Knowsley LPA",
+      "reference": "E60000047",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626320",
+      "name": "Lake District National Park LPA",
+      "reference": "E60000320",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626195",
+      "name": "Lambeth LPA",
+      "reference": "E60000195",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626039",
+      "name": "Lancaster LPA",
+      "reference": "E60000039",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626071",
+      "name": "Leeds LPA",
+      "reference": "E60000071",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626074",
+      "name": "Leicester LPA",
+      "reference": "E60000074",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626239",
+      "name": "Lewes LPA",
+      "reference": "E60000239",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626196",
+      "name": "Lewisham LPA",
+      "reference": "E60000196",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626119",
+      "name": "Lichfield LPA",
+      "reference": "E60000119",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626094",
+      "name": "Lincoln LPA",
+      "reference": "E60000094",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626048",
+      "name": "Liverpool LPA",
+      "reference": "E60000048",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626329",
+      "name": "London Legacy Development Corporation LPA",
+      "reference": "E60000329",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626145",
+      "name": "Luton LPA",
+      "reference": "E60000145",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626259",
+      "name": "Maidstone LPA",
+      "reference": "E60000259",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626162",
+      "name": "Maldon LPA",
+      "reference": "E60000162",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626138",
+      "name": "Malvern Hills LPA",
+      "reference": "E60000138",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626027",
+      "name": "Manchester LPA",
+      "reference": "E60000027",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626110",
+      "name": "Mansfield LPA",
+      "reference": "E60000110",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626224",
+      "name": "Medway LPA",
+      "reference": "E60000224",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626089",
+      "name": "Melton LPA",
+      "reference": "E60000089",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626314",
+      "name": "Mendip LPA",
+      "reference": "E60000314",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626216",
+      "name": "Merton LPA",
+      "reference": "E60000216",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626302",
+      "name": "Mid Devon LPA",
+      "reference": "E60000302",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626186",
+      "name": "Mid Suffolk LPA",
+      "reference": "E60000186",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626286",
+      "name": "Mid Sussex LPA",
+      "reference": "E60000286",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626004",
+      "name": "Middlesbrough LPA",
+      "reference": "E60000004",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626225",
+      "name": "Milton Keynes LPA",
+      "reference": "E60000225",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626273",
+      "name": "Mole Valley LPA",
+      "reference": "E60000273",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626249",
+      "name": "New Forest LPA",
+      "reference": "E60000249",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626321",
+      "name": "New Forest National Park LPA",
+      "reference": "E60000321",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626111",
+      "name": "Newark and Sherwood LPA",
+      "reference": "E60000111",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626009",
+      "name": "Newcastle upon Tyne LPA",
+      "reference": "E60000009",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626120",
+      "name": "Newcastle-under-Lyme LPA",
+      "reference": "E60000120",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626197",
+      "name": "Newham LPA",
+      "reference": "E60000197",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626303",
+      "name": "North Devon LPA",
+      "reference": "E60000303",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626083",
+      "name": "North East Derbyshire LPA",
+      "reference": "E60000083",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626054",
+      "name": "North East Lincolnshire LPA",
+      "reference": "E60000054",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626170",
+      "name": "North Hertfordshire LPA",
+      "reference": "E60000170",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626095",
+      "name": "North Kesteven LPA",
+      "reference": "E60000095",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626055",
+      "name": "North Lincolnshire LPA",
+      "reference": "E60000055",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626180",
+      "name": "North Norfolk LPA",
+      "reference": "E60000180",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626332",
+      "name": "North Northamptonshire LPA",
+      "reference": "E60000332",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626294",
+      "name": "North Somerset LPA",
+      "reference": "E60000294",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626010",
+      "name": "North Tyneside LPA",
+      "reference": "E60000010",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626125",
+      "name": "North Warwickshire LPA",
+      "reference": "E60000125",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626090",
+      "name": "North West Leicestershire LPA",
+      "reference": "E60000090",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626322",
+      "name": "North York Moors National Park LPA",
+      "reference": "E60000322",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626336",
+      "name": "North Yorkshire LPA",
+      "reference": "E60000336",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626103",
+      "name": "Northampton LPA",
+      "reference": "E60000103",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626005",
+      "name": "Northumberland LPA",
+      "reference": "E60000005",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626323",
+      "name": "Northumberland National Park LPA",
+      "reference": "E60000323",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626181",
+      "name": "Norwich LPA",
+      "reference": "E60000181",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626075",
+      "name": "Nottingham LPA",
+      "reference": "E60000075",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626126",
+      "name": "Nuneaton and Bedworth LPA",
+      "reference": "E60000126",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626091",
+      "name": "Oadby and Wigston LPA",
+      "reference": "E60000091",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626330",
+      "name": "Old Oak and Park Royal Development Corporation LPA",
+      "reference": "E60000330",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626028",
+      "name": "Oldham LPA",
+      "reference": "E60000028",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626266",
+      "name": "Oxford LPA",
+      "reference": "E60000266",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626324",
+      "name": "Peak District National Park LPA",
+      "reference": "E60000324",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626040",
+      "name": "Pendle LPA",
+      "reference": "E60000040",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626146",
+      "name": "Peterborough LPA",
+      "reference": "E60000146",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626295",
+      "name": "Plymouth LPA",
+      "reference": "E60000295",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626226",
+      "name": "Portsmouth LPA",
+      "reference": "E60000226",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626041",
+      "name": "Preston LPA",
+      "reference": "E60000041",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626227",
+      "name": "Reading LPA",
+      "reference": "E60000227",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626217",
+      "name": "Redbridge LPA",
+      "reference": "E60000217",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626006",
+      "name": "Redcar and Cleveland LPA",
+      "reference": "E60000006",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626139",
+      "name": "Redditch LPA",
+      "reference": "E60000139",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626274",
+      "name": "Reigate and Banstead LPA",
+      "reference": "E60000274",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626042",
+      "name": "Ribble Valley LPA",
+      "reference": "E60000042",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626218",
+      "name": "Richmond upon Thames LPA",
+      "reference": "E60000218",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626060",
+      "name": "Richmondshire LPA",
+      "reference": "E60000060",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626029",
+      "name": "Rochdale LPA",
+      "reference": "E60000029",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626163",
+      "name": "Rochford LPA",
+      "reference": "E60000163",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626043",
+      "name": "Rossendale LPA",
+      "reference": "E60000043",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626240",
+      "name": "Rother LPA",
+      "reference": "E60000240",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626066",
+      "name": "Rotherham LPA",
+      "reference": "E60000066",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626127",
+      "name": "Rugby LPA",
+      "reference": "E60000127",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626275",
+      "name": "Runnymede LPA",
+      "reference": "E60000275",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626112",
+      "name": "Rushcliffe LPA",
+      "reference": "E60000112",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626250",
+      "name": "Rushmoor LPA",
+      "reference": "E60000250",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626076",
+      "name": "Rutland LPA",
+      "reference": "E60000076",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626061",
+      "name": "Ryedale LPA",
+      "reference": "E60000061",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626030",
+      "name": "Salford LPA",
+      "reference": "E60000030",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626133",
+      "name": "Sandwell LPA",
+      "reference": "E60000133",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626062",
+      "name": "Scarborough LPA",
+      "reference": "E60000062",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626315",
+      "name": "Sedgemoor LPA",
+      "reference": "E60000315",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626049",
+      "name": "Sefton LPA",
+      "reference": "E60000049",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626063",
+      "name": "Selby LPA",
+      "reference": "E60000063",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626260",
+      "name": "Sevenoaks LPA",
+      "reference": "E60000260",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626067",
+      "name": "Sheffield LPA",
+      "reference": "E60000067",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626114",
+      "name": "Shropshire LPA",
+      "reference": "E60000114",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626228",
+      "name": "Slough LPA",
+      "reference": "E60000228",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626134",
+      "name": "Solihull LPA",
+      "reference": "E60000134",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626337",
+      "name": "Somerset LPA",
+      "reference": "E60000337",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626316",
+      "name": "Somerset West and Taunton LPA",
+      "reference": "E60000316",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626235",
+      "name": "South Bucks LPA",
+      "reference": "E60000235",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626153",
+      "name": "South Cambridgeshire LPA",
+      "reference": "E60000153",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626084",
+      "name": "South Derbyshire LPA",
+      "reference": "E60000084",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626325",
+      "name": "South Downs National Park LPA",
+      "reference": "E60000325",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626296",
+      "name": "South Gloucestershire LPA",
+      "reference": "E60000296",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626304",
+      "name": "South Hams LPA",
+      "reference": "E60000304",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626096",
+      "name": "South Holland LPA",
+      "reference": "E60000096",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626097",
+      "name": "South Kesteven LPA",
+      "reference": "E60000097",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626024",
+      "name": "South Lakeland LPA",
+      "reference": "E60000024",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626182",
+      "name": "South Norfolk LPA",
+      "reference": "E60000182",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626104",
+      "name": "South Northamptonshire LPA",
+      "reference": "E60000104",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626267",
+      "name": "South Oxfordshire LPA",
+      "reference": "E60000267",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626044",
+      "name": "South Ribble LPA",
+      "reference": "E60000044",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626317",
+      "name": "South Somerset LPA",
+      "reference": "E60000317",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626121",
+      "name": "South Staffordshire LPA",
+      "reference": "E60000121",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626011",
+      "name": "South Tyneside LPA",
+      "reference": "E60000011",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626229",
+      "name": "Southampton LPA",
+      "reference": "E60000229",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626147",
+      "name": "Southend-on-Sea LPA",
+      "reference": "E60000147",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626198",
+      "name": "Southwark LPA",
+      "reference": "E60000198",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626276",
+      "name": "Spelthorne LPA",
+      "reference": "E60000276",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626171",
+      "name": "St Albans LPA",
+      "reference": "E60000171",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626050",
+      "name": "St. Helens LPA",
+      "reference": "E60000050",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626122",
+      "name": "Stafford LPA",
+      "reference": "E60000122",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626123",
+      "name": "Staffordshire Moorlands LPA",
+      "reference": "E60000123",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626172",
+      "name": "Stevenage LPA",
+      "reference": "E60000172",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626031",
+      "name": "Stockport LPA",
+      "reference": "E60000031",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626007",
+      "name": "Stockton-on-Tees LPA",
+      "reference": "E60000007",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626115",
+      "name": "Stoke-on-Trent LPA",
+      "reference": "E60000115",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626128",
+      "name": "Stratford-on-Avon LPA",
+      "reference": "E60000128",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626312",
+      "name": "Stroud LPA",
+      "reference": "E60000312",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626012",
+      "name": "Sunderland LPA",
+      "reference": "E60000012",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626277",
+      "name": "Surrey Heath LPA",
+      "reference": "E60000277",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626219",
+      "name": "Sutton LPA",
+      "reference": "E60000219",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626261",
+      "name": "Swale LPA",
+      "reference": "E60000261",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626297",
+      "name": "Swindon LPA",
+      "reference": "E60000297",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626032",
+      "name": "Tameside LPA",
+      "reference": "E60000032",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626124",
+      "name": "Tamworth LPA",
+      "reference": "E60000124",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626278",
+      "name": "Tandridge LPA",
+      "reference": "E60000278",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626305",
+      "name": "Teignbridge LPA",
+      "reference": "E60000305",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626116",
+      "name": "Telford and Wrekin LPA",
+      "reference": "E60000116",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626164",
+      "name": "Tendring LPA",
+      "reference": "E60000164",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626251",
+      "name": "Test Valley LPA",
+      "reference": "E60000251",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626313",
+      "name": "Tewkesbury LPA",
+      "reference": "E60000313",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626262",
+      "name": "Thanet LPA",
+      "reference": "E60000262",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626326",
+      "name": "The Broads Authority LPA",
+      "reference": "E60000326",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626173",
+      "name": "Three Rivers LPA",
+      "reference": "E60000173",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626148",
+      "name": "Thurrock LPA",
+      "reference": "E60000148",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626263",
+      "name": "Tonbridge and Malling LPA",
+      "reference": "E60000263",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626298",
+      "name": "Torbay LPA",
+      "reference": "E60000298",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626306",
+      "name": "Torridge LPA",
+      "reference": "E60000306",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626199",
+      "name": "Tower Hamlets LPA",
+      "reference": "E60000199",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626033",
+      "name": "Trafford LPA",
+      "reference": "E60000033",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626264",
+      "name": "Tunbridge Wells LPA",
+      "reference": "E60000264",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626165",
+      "name": "Uttlesford LPA",
+      "reference": "E60000165",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626268",
+      "name": "Vale of White Horse LPA",
+      "reference": "E60000268",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626072",
+      "name": "Wakefield LPA",
+      "reference": "E60000072",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626135",
+      "name": "Walsall LPA",
+      "reference": "E60000135",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626220",
+      "name": "Waltham Forest LPA",
+      "reference": "E60000220",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626200",
+      "name": "Wandsworth LPA",
+      "reference": "E60000200",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626018",
+      "name": "Warrington LPA",
+      "reference": "E60000018",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626129",
+      "name": "Warwick LPA",
+      "reference": "E60000129",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626174",
+      "name": "Watford LPA",
+      "reference": "E60000174",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626279",
+      "name": "Waverley LPA",
+      "reference": "E60000279",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626241",
+      "name": "Wealden LPA",
+      "reference": "E60000241",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626105",
+      "name": "Wellingborough LPA",
+      "reference": "E60000105",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626175",
+      "name": "Welwyn Hatfield LPA",
+      "reference": "E60000175",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626230",
+      "name": "West Berkshire LPA",
+      "reference": "E60000230",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626307",
+      "name": "West Devon LPA",
+      "reference": "E60000307",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626045",
+      "name": "West Lancashire LPA",
+      "reference": "E60000045",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626098",
+      "name": "West Lindsey LPA",
+      "reference": "E60000098",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626333",
+      "name": "West Northamptonshire LPA",
+      "reference": "E60000333",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626269",
+      "name": "West Oxfordshire LPA",
+      "reference": "E60000269",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626187",
+      "name": "West Suffolk LPA",
+      "reference": "E60000187",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626201",
+      "name": "Westminster LPA",
+      "reference": "E60000201",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626335",
+      "name": "Westmorland and Furness LPA",
+      "reference": "E60000335",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626034",
+      "name": "Wigan LPA",
+      "reference": "E60000034",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626299",
+      "name": "Wiltshire LPA",
+      "reference": "E60000299",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626252",
+      "name": "Winchester LPA",
+      "reference": "E60000252",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626231",
+      "name": "Windsor and Maidenhead LPA",
+      "reference": "E60000231",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626051",
+      "name": "Wirral LPA",
+      "reference": "E60000051",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626280",
+      "name": "Woking LPA",
+      "reference": "E60000280",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626232",
+      "name": "Wokingham LPA",
+      "reference": "E60000232",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626136",
+      "name": "Wolverhampton LPA",
+      "reference": "E60000136",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626140",
+      "name": "Worcester LPA",
+      "reference": "E60000140",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626287",
+      "name": "Worthing LPA",
+      "reference": "E60000287",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626141",
+      "name": "Wychavon LPA",
+      "reference": "E60000141",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626236",
+      "name": "Wycombe LPA",
+      "reference": "E60000236",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626142",
+      "name": "Wyre Forest LPA",
+      "reference": "E60000142",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626046",
+      "name": "Wyre LPA",
+      "reference": "E60000046",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626056",
+      "name": "York LPA",
+      "reference": "E60000056",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    },
+    {
+      "entity": "626327",
+      "name": "Yorkshire Dales National Park LPA",
+      "reference": "E60000327",
+      "organisation": "",
+      "region": "",
+      "typology": "geography"
+    }
+  ]
+}

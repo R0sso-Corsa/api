@@ -1,0 +1,130 @@
+{
+  "source": "planning.data.gov.uk-sample",
+  "fetched_at": "2026-04-11T10:00:00Z",
+  "records": [
+    {
+      "reference": "2026/1011/P",
+      "source_system": "planning.data.gov.uk",
+      "authority_id": "camden",
+      "authority_name": "Camden Council",
+      "area_id": "camden-cluster",
+      "borough": "Camden",
+      "address": "14-18 Kentish Town Road, London",
+      "postcode": "NW1 9NX",
+      "uprn": "100021123456",
+      "coordinates": {
+        "lat": 51.5389,
+        "lon": -0.1421
+      },
+      "applicant_name": "North Block Living Ltd",
+      "agent_name": "Axis Planning LLP",
+      "proposal": "Demolition of rear extension and erection of a part 5-storey residential-led mixed use development with 22 dwellings and ground floor commercial space.",
+      "application_status": "Validated",
+      "previous_status": "Received",
+      "received_date": "2026-04-03",
+      "validated_date": "2026-04-05",
+      "status_date": "2026-04-05",
+      "decision": null,
+      "decision_date": null,
+      "major_development": true,
+      "article_4_area": false,
+      "green_belt": false,
+      "priority_tag": "high_priority_site_match",
+      "summary": "Major mixed-use infill scheme near Camden Town. Early-stage but commercially relevant because scale and frontage suggest active land assembly or repositioning.",
+      "documents": [
+        {
+          "title": "Design and Access Statement",
+          "url": "https://example.org/docs/2026-1011/design-access.pdf",
+          "published_date": "2026-04-05",
+          "document_type": "statement",
+          "summary": "Sets out mixed-use massing, active frontage, and residential mix."
+        },
+        {
+          "title": "Planning Statement",
+          "url": "https://example.org/docs/2026-1011/planning-statement.pdf",
+          "published_date": "2026-04-05",
+          "document_type": "statement",
+          "summary": "Explains land-use rationale and policy alignment."
+        }
+      ]
+    },
+    {
+      "reference": "26/AP/1448",
+      "source_system": "planning.data.gov.uk",
+      "authority_id": "southwark",
+      "authority_name": "Southwark Council",
+      "area_id": "southwark-cluster",
+      "borough": "Southwark",
+      "address": "112 Old Kent Road, London",
+      "postcode": "SE1 5UE",
+      "uprn": "100023987654",
+      "coordinates": {
+        "lat": 51.4869,
+        "lon": -0.0808
+      },
+      "applicant_name": "Mercury Urban Estates",
+      "agent_name": "Halliday Planning",
+      "proposal": "Change of use from light industrial unit to flexible workspace and café with new shopfront and plant screening.",
+      "application_status": "Approved",
+      "previous_status": "Pending Consideration",
+      "received_date": "2026-03-16",
+      "validated_date": "2026-03-21",
+      "status_date": "2026-04-09",
+      "decision": "Approved",
+      "decision_date": "2026-04-09",
+      "major_development": false,
+      "article_4_area": true,
+      "green_belt": false,
+      "priority_tag": "status_change",
+      "summary": "Approval confirms adaptive-reuse signal on a growth corridor. Useful for neighbouring site benchmarking and occupier pattern tracking.",
+      "documents": [
+        {
+          "title": "Decision Notice",
+          "url": "https://example.org/docs/26-AP-1448/decision-notice.pdf",
+          "published_date": "2026-04-09",
+          "document_type": "decision_notice",
+          "summary": "Permission granted subject to standard conditions."
+        }
+      ]
+    },
+    {
+      "reference": "2026/0666",
+      "source_system": "planning.data.gov.uk",
+      "authority_id": "hackney",
+      "authority_name": "Hackney Council",
+      "area_id": "hackney-cluster",
+      "borough": "Hackney",
+      "address": "3 Mare Street Yard, London",
+      "postcode": "E8 4RP",
+      "uprn": "100022222222",
+      "coordinates": {
+        "lat": 51.5453,
+        "lon": -0.0553
+      },
+      "applicant_name": "East Quarter Studios",
+      "agent_name": null,
+      "proposal": "Retention and upgrade of existing office floorspace with roof extension for additional workspace and ancillary cycle storage.",
+      "application_status": "Pending Consideration",
+      "previous_status": "Validated",
+      "received_date": "2026-02-28",
+      "validated_date": "2026-03-03",
+      "status_date": "2026-04-08",
+      "decision": null,
+      "decision_date": null,
+      "major_development": false,
+      "article_4_area": false,
+      "green_belt": false,
+      "priority_tag": "watch",
+      "summary": "Workspace intensification play in a tight urban area. Smaller than major development, but relevant to local comparables and occupier demand signals.",
+      "documents": [
+        {
+          "title": "Existing and Proposed Drawings",
+          "url": "https://example.org/docs/2026-0666/drawings.pdf",
+          "published_date": "2026-03-03",
+          "document_type": "drawings",
+          "summary": "Shows retained envelope with roof-level expansion."
+        }
+      ]
+    }
+  ]
+}
