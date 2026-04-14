@@ -9,7 +9,7 @@
     * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
     .shell { max-width:1280px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,button,svg { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
     .grid { display:grid; grid-template-columns:0.7fr 1.3fr; gap:22px; } .panel { padding:22px; } .controls { display:grid; gap:12px; } .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; } h1,h2 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,button { width:100%; padding:14px; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .small { font-size:12px; }
-    svg { width:100%; height:620px; padding:10px; } .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; } .dot { display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px; } .app { background:#52f2b3; } .brownfield { background:#7bd8ff; } .list { display:grid; gap:10px; max-height:420px; overflow:auto; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } @media (max-width:1000px){ .grid{ grid-template-columns:1fr; } svg{ height:420px; } }
+    svg { width:100%; height:620px; padding:10px; } .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; } .dot { display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px; } .app { background:#52f2b3; } .brownfield { background:#7bd8ff; } .greenbelt { background:#ffd166; } .agreement { background:#ff7aa2; } .list { display:grid; gap:10px; max-height:420px; overflow:auto; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } @media (max-width:1000px){ .grid{ grid-template-columns:1fr; } svg{ height:420px; } }
   </style>
 </head>
 <body>
@@ -18,7 +18,7 @@
     <div class="grid">
       <section class="panel">
         <h1>Spatial console</h1>
-        <p>Plots live official brownfield points plus any planning applications carrying coordinates in the current official feed slice. Current official planning-application feed may return zero mapped application points in some slices.</p>
+        <p>Plots live official overlay points plus any planning applications carrying coordinates in current official feed slice. Some official datasets may expose no points in current slice, so counts can differ by overlay.</p>
         <div class="controls">
           <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
           <div class="row">
@@ -43,7 +43,7 @@
       <section class="panel">
         <h2>England plotting surface</h2>
         <svg id="map" viewBox="0 0 1000 620"></svg>
-        <div class="legend"><span><span class="dot app"></span>Applications</span><span><span class="dot brownfield"></span>Brownfield</span></div>
+        <div class="legend"><span><span class="dot app"></span>Applications</span><span><span class="dot brownfield"></span>Brownfield</span><span><span class="dot greenbelt"></span>Green belt</span><span><span class="dot agreement"></span>Developer agreements</span></div>
       </section>
     </div>
   </div>
@@ -60,17 +60,25 @@
         const p = project(site.lat, site.lon);
         svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#7bd8ff"><title>${site.site_address || site.name}</title></circle>`;
       }
+      for (const area of data.green_belt) {
+        const p = project(area.lat, area.lon);
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#ffd166"><title>${area.name || area.reference}</title></circle>`;
+      }
+      for (const agreement of data.developer_agreements) {
+        const p = project(agreement.lat, agreement.lon);
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#ff7aa2"><title>${agreement.reference}</title></circle>`;
+      }
       for (const app of data.applications) {
         const p = project(app.lat, app.lon);
         svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#52f2b3"><title>${app.address}</title></circle>`;
       }
-      document.getElementById("meta").textContent = `Loaded ${data.application_count} mapped applications and ${data.brownfield_count} mapped brownfield records.`;
+      document.getElementById("meta").textContent = `Loaded ${data.application_count} mapped applications, ${data.brownfield_count} brownfield, ${data.green_belt_count} green belt, ${data.developer_agreement_count} developer agreements.`;
       const list = document.getElementById("list");
       list.innerHTML = "";
-      for (const item of [...data.applications.slice(0, 20), ...data.brownfield.slice(0, 20)]) {
+      for (const item of [...data.applications.slice(0, 12), ...data.brownfield.slice(0, 12), ...data.green_belt.slice(0, 12), ...data.developer_agreements.slice(0, 12)]) {
         const div = document.createElement("div");
         div.className = "item";
-        div.textContent = item.address || item.site_address || item.name || item.reference;
+        div.textContent = item.address || item.site_address || item.name || item.reference || item.planning_application;
         list.appendChild(div);
       }
     }

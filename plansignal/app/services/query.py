@@ -133,6 +133,39 @@ def watchlist_changes(
     return sorted(changes, key=lambda item: item.materiality_score, reverse=True)
 
 
+def decision_ready_watchlist_changes(
+    watchlist: Watchlist,
+    applications: list[NormalizedApplication],
+    *,
+    max_changes: int = 5,
+) -> list[WatchlistChange]:
+    changes = watchlist_changes(watchlist, applications)
+
+    filtered = [
+        change
+        for change in changes
+        if change.status != "unknown"
+        and change.changed_on is not None
+        and change.materiality_score >= 0.45
+    ]
+
+    if not filtered:
+        filtered = [
+            change
+            for change in changes
+            if change.status != "unknown" and change.materiality_score >= 0.45
+        ]
+
+    filtered.sort(
+        key=lambda item: (
+            item.changed_on or date.min,
+            item.materiality_score,
+        ),
+        reverse=True,
+    )
+    return filtered[:max_changes]
+
+
 def high_priority_signals(applications: list[NormalizedApplication]) -> list[HighPrioritySignal]:
     signals: list[HighPrioritySignal] = []
     for app in applications:
@@ -172,6 +205,55 @@ def high_priority_signals(applications: list[NormalizedApplication]) -> list[Hig
         key=lambda item: (item.relevance_score, item.change_materiality_score),
         reverse=True,
     )
+
+
+def build_watchlist_alert_payload(
+    watchlist: Watchlist,
+    applications: list[NormalizedApplication],
+    *,
+    organization_id: str,
+    max_changes: int = 5,
+    max_signals: int = 3,
+) -> dict:
+    all_changes = watchlist_changes(watchlist, applications)
+    top_changes = decision_ready_watchlist_changes(
+        watchlist,
+        applications,
+        max_changes=max_changes,
+    )
+    delivered_ids = {change.application_id for change in top_changes}
+    delivered_apps = [
+        app
+        for app in applications
+        if app.application_id in delivered_ids and app.status != "unknown"
+    ]
+    top_signal_items = high_priority_signals(delivered_apps)[:max_signals]
+
+    status_counts: dict[str, int] = defaultdict(int)
+    category_counts: dict[str, int] = defaultdict(int)
+    for change in top_changes:
+        status_counts[change.status] += 1
+        category_counts[change.proposal_category] += 1
+
+    return {
+        "event": "watchlist.alert",
+        "organization_id": organization_id,
+        "watchlist": {
+            "watchlist_id": watchlist.watchlist_id,
+            "name": watchlist.name,
+            "customer_name": watchlist.customer_name,
+        },
+        "summary": {
+            "matched_change_count": len(all_changes),
+            "delivered_change_count": len(top_changes),
+            "signal_count": len(top_signal_items),
+            "top_statuses": dict(sorted(status_counts.items(), key=lambda item: item[1], reverse=True)[:5]),
+            "top_categories": dict(sorted(category_counts.items(), key=lambda item: item[1], reverse=True)[:5]),
+            "note": "No decision-ready changes met delivery threshold." if not top_changes else None,
+        },
+        "signals": [signal.model_dump(mode="json") for signal in top_signal_items],
+        "changes": [change.model_dump(mode="json") for change in top_changes],
+    }
 
 
 def actor_applications(actor_id: str, applications: list[NormalizedApplication]) -> list[NormalizedApplication]:

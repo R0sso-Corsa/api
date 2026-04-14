@@ -30,10 +30,16 @@
     </div>
   </div>
   <script>
-    async function loadReport() {
+    function authHeaders() {
+      const bearerToken = localStorage.getItem("plansignalBearerToken") || "";
+      if (bearerToken) return { "Authorization": `Bearer ${bearerToken}` };
       const apiKey = document.getElementById("apiKey").value.trim();
+      if (apiKey) return { "X-API-Key": apiKey };
+      return {};
+    }
+    async function loadReport() {
       const reportId = window.location.pathname.split("/").pop();
-      const response = await fetch(`/reports/saved/${reportId}`, { headers: { "X-API-Key": apiKey } });
+      const response = await fetch(`/reports/saved/${reportId}`, { headers: authHeaders() });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
       document.getElementById("meta").textContent = `${data.report.name} | apps ${data.report.application_count} | signals ${data.report.signal_count} | area ${data.report.area_id || "all"} | keyword ${data.report.keyword || "none"}`;
@@ -42,13 +48,13 @@
       for (const signal of data.signals) {
         const div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = `<strong>${signal.address}</strong><div>${signal.summary}</div><div class="score">${signal.priority_reason} | relevance ${signal.relevance_score.toFixed(2)}</div>`;
+        div.innerHTML = `<strong><a href="/applications/view/${signal.application_id}">${signal.address}</a></strong><div>${signal.summary}</div><div class="score">${signal.priority_reason} | relevance ${signal.relevance_score.toFixed(2)}</div>`;
         target.appendChild(div);
       }
       for (const app of data.applications) {
         const div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = `<strong>${app.site.address}</strong><div>${app.proposal_text}</div><div class="meta">${app.authority.name} | ${app.status} | ${app.proposal_category}</div>`;
+        div.innerHTML = `<strong><a href="/applications/view/${app.application_id}">${app.site.address}</a></strong><div>${app.proposal_text}</div><div class="meta">${app.authority.name} | ${app.status} | ${app.proposal_category}</div>`;
         target.appendChild(div);
       }
       if (!data.signals.length && !data.applications.length) target.innerHTML = '<div class="item">No records in this saved report.</div>';

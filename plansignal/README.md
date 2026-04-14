@@ -59,6 +59,7 @@ Website pages:
 - `GET /map`
 - `GET /reports`
 - `GET /reports/{report_id}`
+- `GET /applications/view/{application_id}`
 - `GET /dashboard`
 
 ## Key endpoints
@@ -86,6 +87,12 @@ Website pages:
 - `GET /reports/scheduled`
 - `POST /reports/scheduled/{schedule_id}/run`
 - `GET /email/outbox`
+- `POST /webhooks/endpoints`
+- `GET /webhooks/endpoints`
+- `POST /webhooks/endpoints/{webhook_id}/test`
+- `GET /webhooks/deliveries`
+- `GET /ops/scheduler`
+- `POST /ops/scheduler/run`
 - `GET /exports/applications.csv`
 - `GET /exports/signals.csv`
 - `POST /auth/register`
@@ -96,6 +103,7 @@ Website pages:
 - `GET /applications/raw`
 - `GET /applications`
 - `GET /applications/{application_id}`
+- `GET /applications/{application_id}/context`
 - `GET /applications/{application_id}/history`
 - `GET /applications/{application_id}/documents`
 - `GET /areas/{area_id}/activity`
@@ -103,7 +111,9 @@ Website pages:
 - `POST /watchlists`
 - `GET /watchlists`
 - `GET /watchlists/{id}`
+- `POST /watchlists/{id}/link-webhook`
 - `GET /watchlists/{id}/changes`
+- `POST /watchlists/{id}/deliver`
 - `POST /alerts/test`
 - `GET /usage`
 - `GET /signals/high-priority`
@@ -114,6 +124,9 @@ Website pages:
 ## Notes
 
 - Remote ingestion is implemented with `urllib` so the service can fetch the Planning Data API later without adding a heavy client.
-- In this workspace, sample fixture mode is the safe default because network access may be restricted.
-- Alerts are currently simulated rather than delivered.
+- Runtime now targets live official Planning Data feeds for applications and context overlays.
+- Scheduled reports now run in a background scheduler loop inside the app process.
+- Email delivery supports SMTP when `PLANSIGNAL_SMTP_HOST` and related SMTP env vars are configured.
+- Without SMTP configured, scheduled emails remain queued in the local outbox for later delivery.
+- Official context overlays now include Article 4, brownfield, green belt, and developer agreements.
 - Billing and richer org management are still future phases.

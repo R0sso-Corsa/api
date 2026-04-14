@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
@@ -22,6 +23,16 @@ DEMO_USER_EMAIL = "demo@plansignal.local"
 DEMO_USER_PASSWORD = "plansignal-demo-password"
 LIVE_PLANNING_DEFAULT_LIMIT = 1000
 LIVE_OVERLAY_DEFAULT_LIMIT = 200
+SCHEDULER_POLL_SECONDS = int(os.getenv("PLANSIGNAL_SCHEDULER_POLL_SECONDS", "60"))
+WEBHOOK_MAX_ATTEMPTS = int(os.getenv("PLANSIGNAL_WEBHOOK_MAX_ATTEMPTS", "5"))
+WEBHOOK_RETRY_BASE_SECONDS = int(os.getenv("PLANSIGNAL_WEBHOOK_RETRY_BASE_SECONDS", "60"))
+WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = int(os.getenv("PLANSIGNAL_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS", "300"))
+SMTP_HOST = os.getenv("PLANSIGNAL_SMTP_HOST")
+SMTP_PORT = int(os.getenv("PLANSIGNAL_SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("PLANSIGNAL_SMTP_USERNAME")
+SMTP_PASSWORD = os.getenv("PLANSIGNAL_SMTP_PASSWORD")
+SMTP_USE_TLS = os.getenv("PLANSIGNAL_SMTP_USE_TLS", "true").lower() != "false"
+SMTP_FROM_EMAIL = os.getenv("PLANSIGNAL_SMTP_FROM_EMAIL", "reports@plansignal.local")
 
 PRIMARY_ICP = {
     "name": "Small and mid-sized planning consultancies and land buyers in England",

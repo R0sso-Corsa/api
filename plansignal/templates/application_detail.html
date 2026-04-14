@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanSignal | Application Detail</title>
+  <style>
+    :root { --bg:#08110f; --panel:#0f1b18; --line:rgba(115,255,199,0.18); --text:#d8f8ec; --muted:#86b7a3; --accent:#52f2b3; --accent-2:#7bd8ff; --warn:#ffd166; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:Consolas,"Courier New",monospace; } a { color:var(--accent-2); text-decoration:none; } a:hover { text-decoration:underline; }
+    .shell { max-width:1380px; margin:0 auto; padding:28px 20px 48px; } .nav,.panel,input,button { background:var(--panel); border:1px solid var(--line); border-radius:18px; } .nav { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-bottom:22px; } .links { display:flex; gap:16px; flex-wrap:wrap; } .brand { color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; }
+    .grid { display:grid; grid-template-columns:0.85fr 1.15fr; gap:22px; } .panel { padding:22px; } .controls,.list { display:grid; gap:12px; } .list { max-height:640px; overflow:auto; } .item { padding:12px; border:1px solid var(--line); border-radius:12px; background:#13231f; } h1,h2,h3 { margin:0 0 12px; } p,.meta { color:var(--muted); line-height:1.6; } input,button { width:100%; padding:14px; color:var(--text); font:inherit; } button { cursor:pointer; background:linear-gradient(180deg, rgba(82,242,179,0.18), rgba(82,242,179,0.08)); } .score { color:var(--warn); } .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media (max-width:980px){ .grid,.two { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav"><div class="brand">PlanSignal // Application Detail</div><div class="links"><a href="/">Home</a><a href="/dashboard">Dashboard</a><a href="/reports">Reports</a></div></nav>
+    <div class="grid">
+      <section class="panel">
+        <h1>Application research view</h1>
+        <div class="controls">
+          <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
+          <button id="loadBtn">Load Detail</button>
+        </div>
+        <div id="meta" class="meta">Waiting for load.</div>
+        <div id="primary" class="list" style="margin-top:16px;"></div>
+      </section>
+      <section class="panel">
+        <h2>Joined official context</h2>
+        <div class="two">
+          <div>
+            <h3>Authority-level matches</h3>
+            <div id="authorityMatches" class="list"></div>
+          </div>
+          <div>
+            <h3>Linked developer agreements</h3>
+            <div id="linkedAgreements" class="list"></div>
+          </div>
+        </div>
+        <h3 style="margin-top:22px;">Nearby counts</h3>
+        <div id="nearbyCounts" class="list"></div>
+      </section>
+    </div>
+  </div>
+  <script>
+    function authHeaders() {
+      const bearerToken = localStorage.getItem("plansignalBearerToken") || "";
+      if (bearerToken) return { "Authorization": `Bearer ${bearerToken}` };
+      const apiKey = document.getElementById("apiKey").value.trim();
+      if (apiKey) return { "X-API-Key": apiKey };
+      return {};
+    }
+    function renderList(targetId, items, renderFn, emptyMessage) {
+      const target = document.getElementById(targetId);
+      target.innerHTML = "";
+      if (!items.length) { target.innerHTML = `<div class="item">${emptyMessage}</div>`; return; }
+      for (const item of items) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = renderFn(item);
+        target.appendChild(div);
+      }
+    }
+    async function loadDetail() {
+      const applicationId = window.location.pathname.split("/").pop();
+      const response = await fetch(`/applications/${applicationId}/context`, { headers: authHeaders() });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+      const app = data.application;
+      document.getElementById("meta").textContent = `${app.source_reference} | ${app.authority.name} | ${app.status} | ${app.proposal_category}`;
+      renderList("primary", [app], (item) => `<strong>${item.site.address}</strong><div>${item.proposal_text}</div><div class="meta">Decision ${item.decision || "Pending"} • Submitted ${item.submitted_date || "Unknown"} • Decision date ${item.decision_date || "Unknown"}</div><div class="meta">Applicant ${item.applicant ? item.applicant.name : "Unknown"} • Agent ${item.agent ? item.agent.name : "Unknown"}</div><div class="score">Relevance ${item.scores.relevance_score.toFixed(2)} • Commercial ${item.scores.commercial_potential_score.toFixed(2)} • Materiality ${item.scores.change_materiality_score.toFixed(2)} • Confidence ${item.scores.confidence_score.toFixed(2)}</div>`, "No application data.");
+      const authorityBlocks = [];
+      for (const [kind, entries] of Object.entries(data.context.authority_matches)) {
+        authorityBlocks.push({ kind, entries });
+      }
+      renderList("authorityMatches", authorityBlocks, (block) => `<strong>${block.kind}</strong><div class="meta">${block.entries.length} matching records</div><div>${block.entries.map((item) => item.reference || item.name || item.entity).join("<br>") || "None"}</div>`, "No authority-level matches.");
+      renderList("linkedAgreements", data.context.linked_developer_agreements, (item) => `<strong>${item.reference || item.name}</strong><div class="meta">App ${item.planning_application || "Unknown"} • Type ${item.developer_agreement_type || "Unknown"}</div><div class="score">Start ${item.start_date || "Unknown"} • Entry ${item.entry_date || "Unknown"}</div>${item.document_url ? `<a href="${item.document_url}" target="_blank" rel="noreferrer">Open source record</a>` : ""}`, "No linked developer agreements.");
+      const nearbyItems = Object.entries(data.context.nearby_counts).map(([name, value]) => ({ name, value }));
+      renderList("nearbyCounts", nearbyItems, (item) => `<strong>${item.name}</strong><div class="score">${item.value}</div>`, "No nearby counts.");
+    }
+    document.getElementById("loadBtn").addEventListener("click", () => loadDetail().catch((error) => {
+      document.getElementById("meta").textContent = `Load failed: ${error.message}`;
+    }));
+    loadDetail().catch((error) => {
+      document.getElementById("meta").textContent = `Initial load failed: ${error.message}`;
+    });
+  </script>
+</body>
+</html>

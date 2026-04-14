@@ -21,6 +21,8 @@
           <input id="apiKey" value="plansignal-demo-key" placeholder="X-API-Key">
           <input id="areaId" placeholder="Optional area id, e.g. E60000065">
           <input id="keyword" placeholder="Optional keyword, e.g. dwelling">
+          <div id="savedReportEditState" class="meta">Creating new saved report snapshot.</div>
+          <input id="savedReportEditingId" type="hidden">
           <input id="reportName" value="Weekly monitoring snapshot" placeholder="Saved report name">
           <textarea id="reportNotes" placeholder="Optional report notes"></textarea>
           <button id="loadBtn">Load Summary</button>
@@ -28,8 +30,32 @@
             <button id="appsBtn">Download Applications CSV</button>
             <button id="signalsBtn">Download Signals CSV</button>
           </div>
-          <button id="saveBtn">Save Report Snapshot</button>
+          <div class="row">
+            <button id="saveBtn">Save Report Snapshot</button>
+            <button id="updateSavedReportBtn">Update Saved Report</button>
+            <button id="cancelSavedReportEditBtn">Cancel Edit</button>
+          </div>
+          <h3>Organization users</h3>
+          <div class="meta">Owner creates users. Owner or admin can view users.</div>
+          <input id="orgUserName" placeholder="Full name">
+          <input id="orgUserEmail" placeholder="Email">
+          <input id="orgUserPassword" type="password" placeholder="Password (min 8 chars)">
+          <select id="orgUserRole">
+            <option value="member" selected>Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button id="createOrgUserBtn">Create User</button>
+          <h3>Organization invitations</h3>
+          <div class="meta">Owner creates manual invite links. Owner or admin can view invites.</div>
+          <input id="orgInviteEmail" placeholder="Invite email">
+          <select id="orgInviteRole">
+            <option value="member" selected>Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button id="createOrgInviteBtn">Create Invite</button>
           <h3>Schedule delivery</h3>
+          <div id="scheduleEditState" class="meta">Creating new schedule.</div>
+          <input id="scheduleEditingId" type="hidden">
           <input id="scheduleName" value="Weekly report email" placeholder="Schedule name">
           <input id="scheduleEmail" placeholder="Delivery email">
           <select id="scheduleFrequency">
@@ -37,12 +63,58 @@
             <option value="daily">Daily</option>
             <option value="monthly">Monthly</option>
           </select>
-          <button id="scheduleBtn">Create Schedule</button>
+          <div class="row">
+            <button id="scheduleBtn">Create Schedule</button>
+            <button id="updateScheduleBtn">Update Schedule</button>
+            <button id="cancelScheduleEditBtn">Cancel Edit</button>
+          </div>
+          <button id="schedulerRunBtn">Run Scheduler Pass</button>
+          <h3>Watchlist webhook alerts</h3>
+          <div id="watchlistEditState" class="meta">Creating new watchlist.</div>
+          <input id="watchlistEditingId" type="hidden">
+          <input id="watchlistName" value="Camden webhook watch" placeholder="Watchlist name">
+          <input id="watchlistCustomer" value="Demo operator" placeholder="Customer / team">
+          <input id="watchlistWebhookId" placeholder="Webhook endpoint id">
+          <select id="watchlistArea">
+            <option value="">All authorities</option>
+          </select>
+          <input id="watchlistStatuses" value="validated,approved" placeholder="Statuses CSV, e.g. validated,approved">
+          <input id="watchlistCategories" value="residential,office" placeholder="Categories CSV, e.g. residential,office">
+          <input id="watchlistKeywords" value="mixed-use,infill" placeholder="Keywords CSV, e.g. mixed-use,infill">
+          <input id="watchlistApplicantKeywords" placeholder="Applicant keywords CSV">
+          <div class="row">
+            <input id="watchlistMinRelevance" value="0.55" placeholder="Min relevance 0-1">
+            <input id="watchlistChangedSince" type="date" placeholder="Changed since">
+          </div>
+          <div class="row">
+            <button id="createWatchlistBtn">Create Watchlist</button>
+            <button id="updateWatchlistBtn">Update Watchlist</button>
+            <button id="linkWatchlistBtn">Link Existing Watchlist</button>
+            <button id="cancelWatchlistEditBtn">Cancel Edit</button>
+          </div>
+          <h3>Webhook delivery</h3>
+          <div id="webhookEditState" class="meta">Creating new webhook endpoint.</div>
+          <input id="webhookEditingId" type="hidden">
+          <input id="webhookLabel" value="Ops webhook" placeholder="Webhook label">
+          <input id="webhookUrl" placeholder="https://example.com/webhook">
+          <input id="webhookSecret" placeholder="Webhook signing secret (blank = auto-generate)">
+          <div class="row">
+            <button id="createWebhookBtn">Create Webhook</button>
+            <button id="updateWebhookBtn">Update Webhook</button>
+            <button id="testAlertWebhookBtn">Send Test Alert</button>
+            <button id="cancelWebhookEditBtn">Cancel Edit</button>
+          </div>
         </div>
         <div id="status" class="meta">No report loaded.</div>
+        <div id="schedulerStatus" class="meta"></div>
         <div id="savedReports" class="list"></div>
+        <div id="orgUsers" class="list"></div>
+        <div id="orgInvitations" class="list"></div>
         <div id="scheduledReports" class="list"></div>
         <div id="outbox" class="list"></div>
+        <div id="watchlistWebhookList" class="list"></div>
+        <div id="webhookEndpoints" class="list"></div>
+        <div id="webhookDeliveries" class="list"></div>
       </section>
       <section class="panel">
         <h2>Summary output</h2>
@@ -51,17 +123,65 @@
     </div>
   </div>
   <script>
-    async function loadSummary() {
+    function parseCsvValues(value) {
+      return value.split(",").map((item) => item.trim()).filter(Boolean);
+    }
+    function formatApiError(data, fallback = "Request failed") {
+      if (!data) return fallback;
+      if (typeof data.detail === "string" && data.detail) return data.detail;
+      if (Array.isArray(data.detail) && data.detail.length) {
+        return data.detail.map((item) => {
+          const path = Array.isArray(item.loc)
+            ? item.loc.filter((part) => part !== "body").join(".")
+            : "request";
+          return `${path || "request"}: ${item.msg}`;
+        }).join(" | ");
+      }
+      if (Array.isArray(data.errors) && data.errors.length) {
+        return data.errors.join(" | ");
+      }
+      if (typeof data.message === "string" && data.message) return data.message;
+      return fallback;
+    }
+    async function readApiError(response, fallback) {
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(fallback || `HTTP ${response.status}`);
+      }
+      throw new Error(formatApiError(data, fallback || `HTTP ${response.status}`));
+    }
+    function authHeaders() {
+      const bearerToken = localStorage.getItem("plansignalBearerToken") || "";
+      if (bearerToken) return { "Authorization": `Bearer ${bearerToken}` };
       const apiKey = document.getElementById("apiKey").value.trim();
-      const response = await fetch("/reports/summary", { headers: { "X-API-Key": apiKey } });
+      if (apiKey) return { "X-API-Key": apiKey };
+      return {};
+    }
+    async function loadAuthorities() {
+      const response = await fetch("/authorities");
+      const data = await response.json();
+      const target = document.getElementById("watchlistArea");
+      const current = target.value;
+      target.innerHTML = '<option value="">All authorities</option>';
+      for (const authority of data.authorities) {
+        const option = document.createElement("option");
+        option.value = authority.name;
+        option.textContent = authority.name;
+        target.appendChild(option);
+      }
+      if (current) target.value = current;
+    }
+    async function loadSummary() {
+      const response = await fetch("/reports/summary", { headers: authHeaders() });
       const text = await response.text();
       document.getElementById("output").textContent = text;
       document.getElementById("status").textContent = `Summary request: HTTP ${response.status}`;
       await loadSavedReports();
     }
     async function downloadCsv(path, filename) {
-      const apiKey = document.getElementById("apiKey").value.trim();
-      const response = await fetch(path, { headers: { "X-API-Key": apiKey } });
+      const response = await fetch(path, { headers: authHeaders() });
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -71,10 +191,9 @@
       URL.revokeObjectURL(url);
     }
     async function saveReport() {
-      const apiKey = document.getElementById("apiKey").value.trim();
       const response = await fetch("/reports/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           name: document.getElementById("reportName").value,
           notes: document.getElementById("reportNotes").value,
@@ -87,27 +206,370 @@
       document.getElementById("status").textContent = `Saved report ${data.report_id}`;
       await loadSavedReports();
     }
+    function resetSavedReportForm() {
+      document.getElementById("savedReportEditingId").value = "";
+      document.getElementById("savedReportEditState").textContent = "Creating new saved report snapshot.";
+      document.getElementById("reportName").value = "Weekly monitoring snapshot";
+      document.getElementById("reportNotes").value = "";
+    }
+    function populateSavedReportForm(item) {
+      document.getElementById("savedReportEditingId").value = item.report_id;
+      document.getElementById("savedReportEditState").textContent = `Editing saved report ${item.report_id}`;
+      document.getElementById("reportName").value = item.name || "";
+      document.getElementById("reportNotes").value = item.notes || "";
+      document.getElementById("areaId").value = item.area_id || "";
+      document.getElementById("keyword").value = item.keyword || "";
+    }
+    async function updateSavedReport() {
+      const reportId = document.getElementById("savedReportEditingId").value;
+      if (!reportId) throw new Error("Choose a saved report to edit first.");
+      const response = await fetch(`/reports/saved/${reportId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name: document.getElementById("reportName").value,
+          notes: document.getElementById("reportNotes").value || null,
+          area_id: document.getElementById("areaId").value || null,
+          keyword: document.getElementById("keyword").value || null
+        })
+      });
+      if (!response.ok) await readApiError(response, "Saved report update failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Updated saved report ${data.report_id}`;
+      resetSavedReportForm();
+      await loadSavedReports();
+    }
+    async function deleteSavedReport(reportId) {
+      if (!window.confirm(`Delete saved report ${reportId}?`)) return;
+      const response = await fetch(`/reports/saved/${reportId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Saved report delete failed");
+      document.getElementById("status").textContent = `Deleted saved report ${reportId}`;
+      if (document.getElementById("savedReportEditingId").value === reportId) resetSavedReportForm();
+      await loadSavedReports();
+    }
     async function loadSavedReports() {
-      const apiKey = document.getElementById("apiKey").value.trim();
-      const response = await fetch("/reports/saved", { headers: { "X-API-Key": apiKey } });
+      const response = await fetch("/reports/saved", { headers: authHeaders() });
       const data = await response.json();
       const target = document.getElementById("savedReports");
       target.innerHTML = "";
       for (const item of data) {
         const div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = `<a href="/reports/${item.report_id}">${item.name}</a><div>${item.report_id} | apps ${item.application_count} | signals ${item.signal_count}</div>`;
+        div.innerHTML = `<a href="/reports/${item.report_id}">${item.name}</a><div>${item.report_id} | apps ${item.application_count} | signals ${item.signal_count}</div><div>area ${item.area_id || "all"} | keyword ${item.keyword || "none"}</div><div class="row"><button data-saved-edit="${item.report_id}">Edit</button><button data-saved-delete="${item.report_id}">Delete</button></div>`;
         target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-saved-edit]")) {
+        button.addEventListener("click", () => {
+          const item = data.find((entry) => entry.report_id === button.dataset.savedEdit);
+          if (item) populateSavedReportForm(item);
+        });
+      }
+      for (const button of target.querySelectorAll("[data-saved-delete]")) {
+        button.addEventListener("click", () => deleteSavedReport(button.dataset.savedDelete).catch((error) => {
+          document.getElementById("status").textContent = `Saved report delete failed: ${error.message}`;
+        }));
       }
       if (!data.length) target.innerHTML = '<div class="item">No saved reports yet.</div>';
       await loadScheduledReports();
       await loadOutbox();
+      await loadWatchlists();
+      await loadWebhookEndpoints();
+      await loadWebhookDeliveries();
+      await loadSchedulerStatus();
+      await loadOrganizationUsers();
+      await loadOrganizationInvitations();
+    }
+    async function createOrganizationUser() {
+      const response = await fetch("/org/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          full_name: document.getElementById("orgUserName").value,
+          email: document.getElementById("orgUserEmail").value,
+          password: document.getElementById("orgUserPassword").value,
+          role: document.getElementById("orgUserRole").value
+        })
+      });
+      if (!response.ok) await readApiError(response, "Organization user create failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Created organization user ${data.email}`;
+      document.getElementById("orgUserName").value = "";
+      document.getElementById("orgUserEmail").value = "";
+      document.getElementById("orgUserPassword").value = "";
+      document.getElementById("orgUserRole").value = "member";
+      await loadOrganizationUsers();
+    }
+    async function updateOrganizationUserRole(userId, role) {
+      const response = await fetch(`/org/users/${userId}/role`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ role })
+      });
+      if (!response.ok) await readApiError(response, "Organization user role update failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Updated role for ${data.email} to ${data.role}`;
+      await loadOrganizationUsers();
+    }
+    async function deleteOrganizationUser(userId) {
+      if (!window.confirm(`Delete organization user ${userId}?`)) return;
+      const response = await fetch(`/org/users/${userId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Organization user delete failed");
+      document.getElementById("status").textContent = `Deleted organization user ${userId}`;
+      await loadOrganizationUsers();
+    }
+    async function loadOrganizationUsers() {
+      const response = await fetch("/org/users", { headers: authHeaders() });
+      const target = document.getElementById("orgUsers");
+      if (response.status === 403) {
+        target.innerHTML = '<div class="item">Organization user management requires owner/admin session.</div>';
+        return;
+      }
+      if (!response.ok) await readApiError(response, "Organization user load failed");
+      const data = await response.json();
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        const roleOptions = ["owner", "admin", "member"].map((role) => `<option value="${role}" ${item.role === role ? "selected" : ""}>${role}</option>`).join("");
+        div.innerHTML = `<strong>${item.full_name}</strong><div>${item.email}</div><div>${item.user_id}</div><div class="row"><select data-org-user-role="${item.user_id}">${roleOptions}</select><button data-org-user-role-save="${item.user_id}">Update Role</button><button data-org-user-delete="${item.user_id}">Delete</button></div>`;
+        target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-org-user-role-save]")) {
+        button.addEventListener("click", () => {
+          const select = target.querySelector(`[data-org-user-role="${button.dataset.orgUserRoleSave}"]`);
+          updateOrganizationUserRole(button.dataset.orgUserRoleSave, select.value).catch((error) => {
+            document.getElementById("status").textContent = `Organization user role update failed: ${error.message}`;
+          });
+        });
+      }
+      for (const button of target.querySelectorAll("[data-org-user-delete]")) {
+        button.addEventListener("click", () => deleteOrganizationUser(button.dataset.orgUserDelete).catch((error) => {
+          document.getElementById("status").textContent = `Organization user delete failed: ${error.message}`;
+        }));
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No organization users found.</div>';
+    }
+    async function createOrganizationInvitation() {
+      const response = await fetch("/org/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          email: document.getElementById("orgInviteEmail").value,
+          role: document.getElementById("orgInviteRole").value
+        })
+      });
+      if (!response.ok) await readApiError(response, "Organization invitation create failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Created invite for ${data.email} | token ${data.invite_token}`;
+      document.getElementById("orgInviteEmail").value = "";
+      document.getElementById("orgInviteRole").value = "member";
+      await loadOrganizationInvitations();
+    }
+    async function revokeOrganizationInvitation(invitationId) {
+      if (!window.confirm(`Revoke organization invitation ${invitationId}?`)) return;
+      const response = await fetch(`/org/invitations/${invitationId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Organization invitation revoke failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Revoked invitation ${data.invitation_id}`;
+      await loadOrganizationInvitations();
+    }
+    async function loadOrganizationInvitations() {
+      const response = await fetch("/org/invitations", { headers: authHeaders() });
+      const target = document.getElementById("orgInvitations");
+      if (response.status === 403) {
+        target.innerHTML = '<div class="item">Organization invitation management requires owner/admin session.</div>';
+        return;
+      }
+      if (!response.ok) await readApiError(response, "Organization invitation load failed");
+      const data = await response.json();
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        const revokeButton = item.status === "pending"
+          ? `<button data-org-invite-revoke="${item.invitation_id}">Revoke</button>`
+          : "";
+        div.innerHTML = `<strong>${item.email}</strong><div>${item.invitation_id} | ${item.role} | ${item.status}</div><div>token ${item.invite_token}</div><div>expires ${item.expires_at}</div><div class="row">${revokeButton}</div>`;
+        target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-org-invite-revoke]")) {
+        button.addEventListener("click", () => revokeOrganizationInvitation(button.dataset.orgInviteRevoke).catch((error) => {
+          document.getElementById("status").textContent = `Organization invitation revoke failed: ${error.message}`;
+        }));
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No organization invitations found.</div>';
+    }
+    function resetWatchlistForm() {
+      document.getElementById("watchlistEditingId").value = "";
+      document.getElementById("watchlistEditState").textContent = "Creating new watchlist.";
+      document.getElementById("watchlistName").value = "Camden webhook watch";
+      document.getElementById("watchlistCustomer").value = "Demo operator";
+      document.getElementById("watchlistWebhookId").value = "";
+      document.getElementById("watchlistArea").value = "";
+      document.getElementById("watchlistStatuses").value = "validated,approved";
+      document.getElementById("watchlistCategories").value = "residential,office";
+      document.getElementById("watchlistKeywords").value = "mixed-use,infill";
+      document.getElementById("watchlistApplicantKeywords").value = "";
+      document.getElementById("watchlistMinRelevance").value = "0.55";
+      document.getElementById("watchlistChangedSince").value = "";
+    }
+    function populateWatchlistForm(item) {
+      document.getElementById("watchlistEditingId").value = item.watchlist_id;
+      document.getElementById("watchlistEditState").textContent = `Editing watchlist ${item.watchlist_id}`;
+      document.getElementById("watchlistName").value = item.name || "";
+      document.getElementById("watchlistCustomer").value = item.customer_name || "";
+      document.getElementById("watchlistWebhookId").value = item.webhook_endpoint_id || "";
+      document.getElementById("watchlistArea").value = (item.filters.area_ids || [])[0] || "";
+      document.getElementById("watchlistStatuses").value = (item.filters.statuses || []).join(", ");
+      document.getElementById("watchlistCategories").value = (item.filters.proposal_categories || []).join(", ");
+      document.getElementById("watchlistKeywords").value = (item.filters.keywords || []).join(", ");
+      document.getElementById("watchlistApplicantKeywords").value = (item.filters.applicant_keywords || []).join(", ");
+      document.getElementById("watchlistMinRelevance").value = item.filters.min_relevance_score ?? "";
+      document.getElementById("watchlistChangedSince").value = item.filters.changed_since || "";
+    }
+    async function updateWatchlist() {
+      const watchlistId = document.getElementById("watchlistEditingId").value;
+      if (!watchlistId) throw new Error("Choose a watchlist to edit first.");
+      const minRelevance = document.getElementById("watchlistMinRelevance").value.trim();
+      const response = await fetch(`/watchlists/${watchlistId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name: document.getElementById("watchlistName").value,
+          customer_name: document.getElementById("watchlistCustomer").value,
+          delivery_mode: document.getElementById("watchlistWebhookId").value ? "webhook" : "dashboard",
+          webhook_endpoint_id: document.getElementById("watchlistWebhookId").value || null,
+          filters: {
+            area_ids: document.getElementById("watchlistArea").value ? [document.getElementById("watchlistArea").value] : [],
+            statuses: parseCsvValues(document.getElementById("watchlistStatuses").value),
+            proposal_categories: parseCsvValues(document.getElementById("watchlistCategories").value),
+            keywords: parseCsvValues(document.getElementById("watchlistKeywords").value),
+            applicant_keywords: parseCsvValues(document.getElementById("watchlistApplicantKeywords").value),
+            min_relevance_score: minRelevance ? Number(minRelevance) : null,
+            changed_since: document.getElementById("watchlistChangedSince").value || null
+          }
+        })
+      });
+      if (!response.ok) await readApiError(response, "Watchlist update failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Updated watchlist ${data.watchlist_id}`;
+      resetWatchlistForm();
+      await loadWatchlists();
+    }
+    async function deleteWatchlist(watchlistId) {
+      if (!window.confirm(`Delete watchlist ${watchlistId}?`)) return;
+      const response = await fetch(`/watchlists/${watchlistId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Watchlist delete failed");
+      document.getElementById("status").textContent = `Deleted watchlist ${watchlistId}`;
+      if (document.getElementById("watchlistEditingId").value === watchlistId) resetWatchlistForm();
+      await loadWatchlists();
+    }
+    async function createWatchlist() {
+      const minRelevance = document.getElementById("watchlistMinRelevance").value.trim();
+      const response = await fetch("/watchlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name: document.getElementById("watchlistName").value,
+          customer_name: document.getElementById("watchlistCustomer").value,
+          delivery_mode: document.getElementById("watchlistWebhookId").value ? "webhook" : "dashboard",
+          webhook_endpoint_id: document.getElementById("watchlistWebhookId").value || null,
+          filters: {
+            area_ids: document.getElementById("watchlistArea").value ? [document.getElementById("watchlistArea").value] : [],
+            statuses: parseCsvValues(document.getElementById("watchlistStatuses").value),
+            proposal_categories: parseCsvValues(document.getElementById("watchlistCategories").value),
+            keywords: parseCsvValues(document.getElementById("watchlistKeywords").value),
+            applicant_keywords: parseCsvValues(document.getElementById("watchlistApplicantKeywords").value),
+            min_relevance_score: minRelevance ? Number(minRelevance) : null,
+            changed_since: document.getElementById("watchlistChangedSince").value || null
+          }
+        })
+      });
+      if (!response.ok) await readApiError(response, "Watchlist create failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Created watchlist ${data.watchlist_id}`;
+      await loadWatchlists();
+    }
+    async function linkWatchlist(watchlistId) {
+      const response = await fetch(`/watchlists/${watchlistId}/link-webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          webhook_endpoint_id: document.getElementById("watchlistWebhookId").value
+        })
+      });
+      if (!response.ok) await readApiError(response, "Watchlist link failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Linked webhook to ${data.watchlist_id}`;
+      await loadWatchlists();
+    }
+    async function deliverWatchlist(watchlistId) {
+      const response = await fetch(`/watchlists/${watchlistId}/deliver`, {
+        method: "POST",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Watchlist deliver failed");
+      const data = await response.json();
+      if (data.delivery_status === "skipped") {
+        document.getElementById("status").textContent = `Watchlist delivery skipped: ${data.reason || "No decision-ready changes."}`;
+      } else if (data.delivery_status === "queued") {
+        document.getElementById("status").textContent = `Watchlist delivery queued for retry: ${data.failure_reason || "temporary webhook failure"}${data.next_attempt_at ? ` | next ${data.next_attempt_at}` : ""}`;
+      } else {
+        document.getElementById("status").textContent = `Watchlist delivery ${data.delivery_status}: ${data.delivery_id}`;
+      }
+      await loadWebhookDeliveries();
+      await loadWatchlists();
+    }
+    async function loadWatchlists() {
+      const response = await fetch("/watchlists", { headers: authHeaders() });
+      const data = await response.json();
+      const target = document.getElementById("watchlistWebhookList");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${item.name}</strong><div>${item.watchlist_id}</div><div>mode ${item.delivery_mode} | webhook ${item.webhook_endpoint_id || "none"}</div><div>areas ${(item.filters.area_ids || []).join(", ") || "all"} | statuses ${(item.filters.statuses || []).join(", ") || "all"}</div><div>keywords ${(item.filters.keywords || []).join(", ") || "none"} | min relevance ${item.filters.min_relevance_score ?? "none"}</div><div>changed since ${item.filters.changed_since || "none"} | last sent ${item.last_webhook_sent_at || "never"}</div><div class="row"><button data-watch-deliver="${item.watchlist_id}">Deliver Now</button><button data-watch-link="${item.watchlist_id}">Link Webhook</button><button data-watch-edit="${item.watchlist_id}">Edit</button><button data-watch-delete="${item.watchlist_id}">Delete</button></div>`;
+        target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-watch-deliver]")) {
+        button.addEventListener("click", () => deliverWatchlist(button.dataset.watchDeliver).catch((error) => {
+          document.getElementById("status").textContent = `Watchlist deliver failed: ${error.message}`;
+        }));
+      }
+      for (const button of target.querySelectorAll("[data-watch-link]")) {
+        button.addEventListener("click", () => linkWatchlist(button.dataset.watchLink).catch((error) => {
+          document.getElementById("status").textContent = `Watchlist link failed: ${error.message}`;
+        }));
+      }
+      for (const button of target.querySelectorAll("[data-watch-edit]")) {
+        button.addEventListener("click", () => {
+          const item = data.find((entry) => entry.watchlist_id === button.dataset.watchEdit);
+          if (item) populateWatchlistForm(item);
+        });
+      }
+      for (const button of target.querySelectorAll("[data-watch-delete]")) {
+        button.addEventListener("click", () => deleteWatchlist(button.dataset.watchDelete).catch((error) => {
+          document.getElementById("status").textContent = `Watchlist delete failed: ${error.message}`;
+        }));
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No watchlists yet.</div>';
     }
     async function createSchedule() {
-      const apiKey = document.getElementById("apiKey").value.trim();
       const response = await fetch("/reports/scheduled", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           name: document.getElementById("scheduleName").value,
           delivery_email: document.getElementById("scheduleEmail").value,
@@ -116,33 +578,78 @@
           keyword: document.getElementById("keyword").value || null
         })
       });
+      if (!response.ok) await readApiError(response, "Schedule create failed");
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
       document.getElementById("status").textContent = `Created schedule ${data.schedule_id}`;
       await loadScheduledReports();
     }
+    function resetScheduleForm() {
+      document.getElementById("scheduleEditingId").value = "";
+      document.getElementById("scheduleEditState").textContent = "Creating new schedule.";
+      document.getElementById("scheduleName").value = "Weekly report email";
+      document.getElementById("scheduleEmail").value = "";
+      document.getElementById("scheduleFrequency").value = "weekly";
+    }
+    function populateScheduleForm(item) {
+      document.getElementById("scheduleEditingId").value = item.schedule_id;
+      document.getElementById("scheduleEditState").textContent = `Editing schedule ${item.schedule_id}`;
+      document.getElementById("scheduleName").value = item.name || "";
+      document.getElementById("scheduleEmail").value = item.delivery_email || "";
+      document.getElementById("scheduleFrequency").value = item.frequency || "weekly";
+      document.getElementById("areaId").value = item.area_id || "";
+      document.getElementById("keyword").value = item.keyword || "";
+    }
+    async function updateSchedule() {
+      const scheduleId = document.getElementById("scheduleEditingId").value;
+      if (!scheduleId) throw new Error("Choose a schedule to edit first.");
+      const response = await fetch(`/reports/scheduled/${scheduleId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          name: document.getElementById("scheduleName").value,
+          delivery_email: document.getElementById("scheduleEmail").value,
+          frequency: document.getElementById("scheduleFrequency").value,
+          area_id: document.getElementById("areaId").value || null,
+          keyword: document.getElementById("keyword").value || null
+        })
+      });
+      if (!response.ok) await readApiError(response, "Schedule update failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Updated schedule ${data.schedule_id}`;
+      resetScheduleForm();
+      await loadScheduledReports();
+    }
+    async function deleteSchedule(scheduleId) {
+      if (!window.confirm(`Delete scheduled report ${scheduleId}?`)) return;
+      const response = await fetch(`/reports/scheduled/${scheduleId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Schedule delete failed");
+      document.getElementById("status").textContent = `Deleted schedule ${scheduleId}`;
+      if (document.getElementById("scheduleEditingId").value === scheduleId) resetScheduleForm();
+      await loadScheduledReports();
+    }
     async function runSchedule(scheduleId) {
-      const apiKey = document.getElementById("apiKey").value.trim();
       const response = await fetch(`/reports/scheduled/${scheduleId}/run`, {
         method: "POST",
-        headers: { "X-API-Key": apiKey }
+        headers: authHeaders()
       });
+      if (!response.ok) await readApiError(response, "Schedule run failed");
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
       document.getElementById("status").textContent = `Queued email ${data.queued_email.email_id} from schedule ${scheduleId}`;
       await loadScheduledReports();
       await loadOutbox();
     }
     async function loadScheduledReports() {
-      const apiKey = document.getElementById("apiKey").value.trim();
-      const response = await fetch("/reports/scheduled", { headers: { "X-API-Key": apiKey } });
+      const response = await fetch("/reports/scheduled", { headers: authHeaders() });
       const data = await response.json();
       const target = document.getElementById("scheduledReports");
       target.innerHTML = "";
       for (const item of data) {
         const div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = `<strong>${item.name}</strong><div>${item.frequency} -> ${item.delivery_email}</div><div>${item.schedule_id}</div><div>last run ${item.last_run_at || "never"}</div><button data-schedule-run="${item.schedule_id}">Run Now</button>`;
+        div.innerHTML = `<strong>${item.name}</strong><div>${item.frequency} -> ${item.delivery_email}</div><div>${item.schedule_id}</div><div>area ${item.area_id || "all"} | keyword ${item.keyword || "none"}</div><div>last run ${item.last_run_at || "never"}</div><div class="row"><button data-schedule-run="${item.schedule_id}">Run Now</button><button data-schedule-edit="${item.schedule_id}">Edit</button><button data-schedule-delete="${item.schedule_id}">Delete</button></div>`;
         target.appendChild(div);
       }
       for (const button of target.querySelectorAll("[data-schedule-run]")) {
@@ -150,21 +657,198 @@
           document.getElementById("status").textContent = `Run failed: ${error.message}`;
         }));
       }
+      for (const button of target.querySelectorAll("[data-schedule-edit]")) {
+        button.addEventListener("click", () => {
+          const item = data.find((entry) => entry.schedule_id === button.dataset.scheduleEdit);
+          if (item) populateScheduleForm(item);
+        });
+      }
+      for (const button of target.querySelectorAll("[data-schedule-delete]")) {
+        button.addEventListener("click", () => deleteSchedule(button.dataset.scheduleDelete).catch((error) => {
+          document.getElementById("status").textContent = `Schedule delete failed: ${error.message}`;
+        }));
+      }
       if (!data.length) target.innerHTML = '<div class="item">No schedules yet.</div>';
     }
     async function loadOutbox() {
-      const apiKey = document.getElementById("apiKey").value.trim();
-      const response = await fetch("/email/outbox", { headers: { "X-API-Key": apiKey } });
+      const response = await fetch("/email/outbox", { headers: authHeaders() });
       const data = await response.json();
       const target = document.getElementById("outbox");
       target.innerHTML = "";
       for (const item of data) {
         const div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = `<strong>${item.subject}</strong><div>${item.recipient}</div><div>${item.body_preview}</div>`;
+        div.innerHTML = `<strong>${item.subject}</strong><div>${item.recipient}</div><div>status ${item.delivery_status} | attempts ${item.delivery_attempts}</div><div>${item.body_preview}</div><div>${item.failure_reason || ""}</div>`;
         target.appendChild(div);
       }
       if (!data.length) target.innerHTML = '<div class="item">No queued emails yet.</div>';
+    }
+    async function loadSchedulerStatus() {
+      const response = await fetch("/ops/scheduler", { headers: authHeaders() });
+      const data = await response.json();
+      document.getElementById("schedulerStatus").textContent = `Scheduler ${data.enabled ? "on" : "off"} | smtp ${data.smtp_enabled ? "on" : "off"} | poll ${data.poll_seconds}s | email queued ${data.queued_email_count} | webhook queued ${data.queued_webhook_count} | schedules ${data.schedule_count}`;
+    }
+    async function createWebhook() {
+      const response = await fetch("/webhooks/endpoints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          label: document.getElementById("webhookLabel").value,
+          target_url: document.getElementById("webhookUrl").value,
+          signing_secret: document.getElementById("webhookSecret").value || null
+        })
+      });
+      if (!response.ok) await readApiError(response, "Webhook create failed");
+      const data = await response.json();
+      document.getElementById("webhookSecret").value = data.signing_secret || "";
+      document.getElementById("status").textContent = `Created webhook ${data.webhook_id} with signing secret`;
+      await loadWebhookEndpoints();
+    }
+    function resetWebhookForm() {
+      document.getElementById("webhookEditingId").value = "";
+      document.getElementById("webhookEditState").textContent = "Creating new webhook endpoint.";
+      document.getElementById("webhookLabel").value = "Ops webhook";
+      document.getElementById("webhookUrl").value = "";
+      document.getElementById("webhookSecret").value = "";
+    }
+    function populateWebhookForm(item) {
+      document.getElementById("webhookEditingId").value = item.webhook_id;
+      document.getElementById("webhookEditState").textContent = `Editing webhook ${item.webhook_id}`;
+      document.getElementById("webhookLabel").value = item.label || "";
+      document.getElementById("webhookUrl").value = item.target_url || "";
+      document.getElementById("webhookSecret").value = item.signing_secret || "";
+    }
+    async function updateWebhook() {
+      const webhookId = document.getElementById("webhookEditingId").value;
+      if (!webhookId) throw new Error("Choose a webhook endpoint to edit first.");
+      const response = await fetch(`/webhooks/endpoints/${webhookId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          label: document.getElementById("webhookLabel").value,
+          target_url: document.getElementById("webhookUrl").value
+        })
+      });
+      if (!response.ok) await readApiError(response, "Webhook update failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Updated webhook ${data.webhook_id}`;
+      if (!document.getElementById("webhookSecret").value) {
+        document.getElementById("webhookSecret").value = data.signing_secret || "";
+      }
+      resetWebhookForm();
+      await loadWebhookEndpoints();
+    }
+    async function deleteWebhook(webhookId) {
+      if (!window.confirm(`Delete webhook endpoint ${webhookId}? Linked watchlists will fall back to dashboard mode.`)) return;
+      const response = await fetch(`/webhooks/endpoints/${webhookId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Webhook delete failed");
+      document.getElementById("status").textContent = `Deleted webhook ${webhookId}`;
+      if (document.getElementById("webhookEditingId").value === webhookId) resetWebhookForm();
+      await loadWebhookEndpoints();
+      await loadWatchlists();
+      await loadWebhookDeliveries();
+    }
+    async function testWebhook(webhookId) {
+      const response = await fetch(`/webhooks/endpoints/${webhookId}/test`, {
+        method: "POST",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Webhook test failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = data.delivery_status === "queued"
+        ? `Webhook test queued for retry: ${data.failure_reason || "temporary webhook failure"}${data.next_attempt_at ? ` | next ${data.next_attempt_at}` : ""}`
+        : `Webhook test ${data.delivery_status}: ${data.delivery_id}`;
+      await loadWebhookDeliveries();
+    }
+    async function testAlertWebhook() {
+      const response = await fetch("/alerts/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          webhook_url: document.getElementById("webhookUrl").value,
+          webhook_secret: document.getElementById("webhookSecret").value || null
+        })
+      });
+      if (!response.ok) await readApiError(response, "Alert webhook failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = data.delivery_status === "queued"
+        ? `Alert webhook queued for retry: ${data.failure_reason || "temporary webhook failure"}${data.next_attempt_at ? ` | next ${data.next_attempt_at}` : ""}`
+        : `Alert webhook ${data.delivery_status || data.status}`;
+      await loadWebhookDeliveries();
+    }
+    async function rotateWebhookSecret(webhookId) {
+      const response = await fetch(`/webhooks/endpoints/${webhookId}/rotate-secret`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          signing_secret: document.getElementById("webhookSecret").value || null
+        })
+      });
+      if (!response.ok) await readApiError(response, "Webhook secret rotate failed");
+      const data = await response.json();
+      document.getElementById("webhookSecret").value = data.signing_secret || "";
+      document.getElementById("status").textContent = `Rotated webhook secret for ${data.webhook_id}`;
+      await loadWebhookEndpoints();
+    }
+    async function loadWebhookEndpoints() {
+      const response = await fetch("/webhooks/endpoints", { headers: authHeaders() });
+      const data = await response.json();
+      const target = document.getElementById("webhookEndpoints");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${item.label}</strong><div>${item.target_url}</div><div>${item.webhook_id}</div><div>secret ${item.signing_secret}</div><div class="row"><button data-webhook-test="${item.webhook_id}">Test Webhook</button><button data-webhook-rotate="${item.webhook_id}">Rotate Secret</button><button data-webhook-edit="${item.webhook_id}">Edit</button><button data-webhook-delete="${item.webhook_id}">Delete</button></div>`;
+        target.appendChild(div);
+      }
+      for (const button of target.querySelectorAll("[data-webhook-test]")) {
+        button.addEventListener("click", () => testWebhook(button.dataset.webhookTest).catch((error) => {
+          document.getElementById("status").textContent = `Webhook test failed: ${error.message}`;
+        }));
+      }
+      for (const button of target.querySelectorAll("[data-webhook-rotate]")) {
+        button.addEventListener("click", () => rotateWebhookSecret(button.dataset.webhookRotate).catch((error) => {
+          document.getElementById("status").textContent = `Webhook secret rotate failed: ${error.message}`;
+        }));
+      }
+      for (const button of target.querySelectorAll("[data-webhook-edit]")) {
+        button.addEventListener("click", () => {
+          const item = data.find((entry) => entry.webhook_id === button.dataset.webhookEdit);
+          if (item) populateWebhookForm(item);
+        });
+      }
+      for (const button of target.querySelectorAll("[data-webhook-delete]")) {
+        button.addEventListener("click", () => deleteWebhook(button.dataset.webhookDelete).catch((error) => {
+          document.getElementById("status").textContent = `Webhook delete failed: ${error.message}`;
+        }));
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No webhook endpoints yet.</div>';
+    }
+    async function loadWebhookDeliveries() {
+      const response = await fetch("/webhooks/deliveries", { headers: authHeaders() });
+      const data = await response.json();
+      const target = document.getElementById("webhookDeliveries");
+      target.innerHTML = "";
+      for (const item of data) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<strong>${item.event_type}</strong><div>${item.target_url}</div><div>status ${item.delivery_status} | attempts ${item.delivery_attempts}</div><div>next ${item.next_attempt_at || "none"}</div><div>${item.payload_preview}</div><div>${item.failure_reason || ""}</div>`;
+        target.appendChild(div);
+      }
+      if (!data.length) target.innerHTML = '<div class="item">No webhook deliveries yet.</div>';
+    }
+    async function runSchedulerPass() {
+      const response = await fetch("/ops/scheduler/run", {
+        method: "POST",
+        headers: authHeaders()
+      });
+      if (!response.ok) await readApiError(response, "Scheduler run failed");
+      const data = await response.json();
+      document.getElementById("status").textContent = `Scheduler pass complete: due ${data.due_result.run_count}, watchlists sent ${data.watchlist_result.sent}, watchlists queued ${data.watchlist_result.queued}, webhook retries sent ${data.webhook_delivery_result.sent}, webhook retries queued ${data.webhook_delivery_result.queued}, email delivered ${data.delivery_result.delivered}, email failed ${data.delivery_result.failed}`;
+      await loadSavedReports();
     }
     document.getElementById("loadBtn").addEventListener("click", () => loadSummary().catch((error) => {
       document.getElementById("status").textContent = `Summary failed: ${error.message}`;
@@ -178,9 +862,68 @@
     document.getElementById("saveBtn").addEventListener("click", () => saveReport().catch((error) => {
       document.getElementById("status").textContent = `Save failed: ${error.message}`;
     }));
+    document.getElementById("createOrgUserBtn").addEventListener("click", () => createOrganizationUser().catch((error) => {
+      document.getElementById("status").textContent = `Organization user create failed: ${error.message}`;
+    }));
+    document.getElementById("createOrgInviteBtn").addEventListener("click", () => createOrganizationInvitation().catch((error) => {
+      document.getElementById("status").textContent = `Organization invitation create failed: ${error.message}`;
+    }));
+    document.getElementById("updateSavedReportBtn").addEventListener("click", () => updateSavedReport().catch((error) => {
+      document.getElementById("status").textContent = `Saved report update failed: ${error.message}`;
+    }));
+    document.getElementById("cancelSavedReportEditBtn").addEventListener("click", () => {
+      resetSavedReportForm();
+      document.getElementById("status").textContent = "Saved report edit cancelled.";
+    });
     document.getElementById("scheduleBtn").addEventListener("click", () => createSchedule().catch((error) => {
       document.getElementById("status").textContent = `Schedule failed: ${error.message}`;
     }));
+    document.getElementById("updateScheduleBtn").addEventListener("click", () => updateSchedule().catch((error) => {
+      document.getElementById("status").textContent = `Schedule update failed: ${error.message}`;
+    }));
+    document.getElementById("cancelScheduleEditBtn").addEventListener("click", () => {
+      resetScheduleForm();
+      document.getElementById("status").textContent = "Schedule edit cancelled.";
+    });
+    document.getElementById("schedulerRunBtn").addEventListener("click", () => runSchedulerPass().catch((error) => {
+      document.getElementById("status").textContent = `Scheduler failed: ${error.message}`;
+    }));
+    document.getElementById("createWatchlistBtn").addEventListener("click", () => createWatchlist().catch((error) => {
+      document.getElementById("status").textContent = `Watchlist create failed: ${error.message}`;
+    }));
+    document.getElementById("updateWatchlistBtn").addEventListener("click", () => updateWatchlist().catch((error) => {
+      document.getElementById("status").textContent = `Watchlist update failed: ${error.message}`;
+    }));
+    document.getElementById("linkWatchlistBtn").addEventListener("click", () => {
+      document.getElementById("status").textContent = "Use Link Webhook button beside watchlist.";
+    });
+    document.getElementById("cancelWatchlistEditBtn").addEventListener("click", () => {
+      resetWatchlistForm();
+      document.getElementById("status").textContent = "Watchlist edit cancelled.";
+    });
+    document.getElementById("createWebhookBtn").addEventListener("click", () => createWebhook().catch((error) => {
+      document.getElementById("status").textContent = `Webhook create failed: ${error.message}`;
+    }));
+    document.getElementById("updateWebhookBtn").addEventListener("click", () => updateWebhook().catch((error) => {
+      document.getElementById("status").textContent = `Webhook update failed: ${error.message}`;
+    }));
+    document.getElementById("testAlertWebhookBtn").addEventListener("click", () => testAlertWebhook().catch((error) => {
+      document.getElementById("status").textContent = `Alert webhook failed: ${error.message}`;
+    }));
+    document.getElementById("cancelWebhookEditBtn").addEventListener("click", () => {
+      resetWebhookForm();
+      document.getElementById("status").textContent = "Webhook edit cancelled.";
+    });
+    loadAuthorities().catch((error) => {
+      document.getElementById("status").textContent = `Authority load failed: ${error.message}`;
+    });
+    resetSavedReportForm();
+    resetWatchlistForm();
+    resetScheduleForm();
+    resetWebhookForm();
+    loadSavedReports().catch((error) => {
+      document.getElementById("status").textContent = `Initial load failed: ${error.message}`;
+    });
   </script>
 </body>
 </html>

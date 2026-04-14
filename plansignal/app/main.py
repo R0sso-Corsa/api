@@ -15,21 +15,38 @@ from .schemas import (
     AlertTestRequest,
     ApiKeyCreateRequest,
     AuthenticatedContext,
+    InvitationAcceptRequest,
     NaturalLanguageQueryRequest,
+    OrganizationInvitationCreateRequest,
+    OrganizationUserCreateRequest,
     SavedReportCreateRequest,
+    SavedReportUpdateRequest,
     ScheduledReportCreateRequest,
+    ScheduledReportUpdateRequest,
     SiteWaitlistRequest,
     SiteScreenRequest,
+    UserRoleUpdateRequest,
     UserLoginRequest,
     UserRegistrationRequest,
     WatchlistCreateRequest,
+    WatchlistUpdateRequest,
+    WatchlistWebhookLinkRequest,
+    WebhookEndpointCreateRequest,
+    WebhookEndpointSecretRotateRequest,
+    WebhookEndpointUpdateRequest,
 )
-from .services.auth import require_api_key
+from .services.auth import require_admin_session_context, require_api_key, require_owner_session_context
 from .services.db import create_api_key as create_api_key_record
+from .services.db import create_organization_invitation
+from .services.db import create_organization_user
+from .services.db import delete_saved_report as delete_saved_report_record
+from .services.db import delete_organization_user
+from .services.db import accept_organization_invitation
 from .services.db import create_saved_report
 from .services.db import create_scheduled_report
 from .services.db import create_site_waitlist_entry
 from .services.db import create_watchlist as create_watchlist_record
+from .services.db import delete_scheduled_report as delete_scheduled_report_record
 from .services.db import get_watchlist as get_watchlist_record
 from .services.db import get_saved_report
 from .services.db import get_scheduled_report
@@ -37,25 +54,52 @@ from .services.db import get_user_profile
 from .services.db import init_db
 from .services.db import list_api_keys
 from .services.db import list_email_outbox
+from .services.db import list_organization_invitations
+from .services.db import list_organization_users
 from .services.db import list_scheduled_reports
 from .services.db import list_saved_reports
 from .services.db import list_watchlists as list_watchlist_records
+from .services.db import list_webhook_deliveries
+from .services.db import list_webhook_endpoints
 from .services.db import login_user
-from .services.db import mark_scheduled_report_ran
-from .services.db import queue_email_delivery
+from .services.db import create_webhook_endpoint
+from .services.db import delete_watchlist as delete_watchlist_record
+from .services.db import delete_webhook_endpoint as delete_webhook_endpoint_record
+from .services.db import get_webhook_endpoint
+from .services.db import link_watchlist_webhook
+from .services.db import mark_watchlist_webhook_sent
+from .services.db import queue_webhook_delivery
 from .services.db import record_usage as record_usage_event
 from .services.db import register_user
+from .services.db import revoke_organization_invitation
+from .services.db import rotate_webhook_endpoint_secret
+from .services.db import update_saved_report as update_saved_report_record
+from .services.db import update_scheduled_report as update_scheduled_report_record
+from .services.db import update_organization_user_role
+from .services.db import update_watchlist as update_watchlist_record
+from .services.db import update_webhook_endpoint as update_webhook_endpoint_record
 from .services.db import usage_snapshot
 from .services.ingestion import fetch_authorities_live, fetch_overlay_dataset, fetch_planning_data
 from .services.normalizer import build_area_activity, get_source_kind, normalize_envelope
 from .services.query import (
     actor_applications,
     benchmark_boroughs,
+    build_watchlist_alert_payload,
     filter_applications,
     high_priority_signals,
     natural_language_query,
     screen_sites,
     watchlist_changes,
+)
+from .services.scheduler import (
+    deliver_pending_outbox_once,
+    deliver_pending_webhooks_once,
+    dispatch_webhook_delivery,
+    run_due_schedules_once,
+    run_schedule_now,
+    run_watchlist_webhooks_once,
+    scheduler_status,
+    start_scheduler,
 )
 
 
@@ -78,6 +122,8 @@ def _load_applications(*, area_id: str | None = None, live: bool = True):
 def _official_context_summary(*, article_4_limit: int = 120, brownfield_limit: int = 120) -> dict:
     article_4 = fetch_overlay_dataset("article-4-direction", limit=article_4_limit)
     brownfield = fetch_overlay_dataset("brownfield-land", limit=brownfield_limit)
+    green_belt = fetch_overlay_dataset("green-belt", limit=120)
+    developer_agreements = fetch_overlay_dataset("developer-agreement", limit=120)
 
     return {
         "article_4": {
@@ -120,6 +166,46 @@ def _official_context_summary(*, article_4_limit: int = 120, brownfield_limit: i
                 for item in brownfield["records"][:8]
             ],
         },
+        "green_belt": {
+            "dataset": "green-belt",
+            "loaded_count": green_belt["loaded_count"],
+            "total_available": green_belt["total_available"],
+            "recent": [
+                {
+                    "entity": str(item.get("entity")),
+                    "name": item.get("name") or item.get("reference") or "Unnamed green belt area",
+                    "reference": item.get("reference"),
+                    "green_belt_core": item.get("green-belt-core"),
+                    "local_authority_district": item.get("local-authority-district"),
+                    "documentation_url": item.get("documentation-url"),
+                    "organisation_entity": item.get("organisation-entity"),
+                    "quality": item.get("quality"),
+                    "point": item.get("point"),
+                }
+                for item in green_belt["records"][:8]
+            ],
+        },
+        "developer_agreements": {
+            "dataset": "developer-agreement",
+            "loaded_count": developer_agreements["loaded_count"],
+            "total_available": developer_agreements["total_available"],
+            "recent": [
+                {
+                    "entity": str(item.get("entity")),
+                    "reference": item.get("reference"),
+                    "name": item.get("name") or item.get("reference") or "Unnamed developer agreement",
+                    "planning_application": item.get("planning-application"),
+                    "developer_agreement_type": item.get("developer-agreement-type"),
+                    "start_date": item.get("start-date"),
+                    "entry_date": item.get("entry-date"),
+                    "document_url": item.get("document-url"),
+                    "organisation_entity": item.get("organisation-entity"),
+                    "quality": item.get("quality"),
+                    "point": item.get("point"),
+                }
+                for item in developer_agreements["records"][:8]
+            ],
+        },
     }
 
 
@@ -148,6 +234,81 @@ def _distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return radius_km * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
 
 
+def _coords_match_filters(
+    coords: dict[str, float],
+    *,
+    center_lat: float | None = None,
+    center_lon: float | None = None,
+    radius_km: float | None = None,
+    min_lat: float | None = None,
+    max_lat: float | None = None,
+    min_lon: float | None = None,
+    max_lon: float | None = None,
+) -> bool:
+    if center_lat is not None and center_lon is not None and radius_km is not None:
+        if _distance_km(center_lat, center_lon, coords["lat"], coords["lon"]) > radius_km:
+            return False
+    if min_lat is not None and coords["lat"] < min_lat:
+        return False
+    if max_lat is not None and coords["lat"] > max_lat:
+        return False
+    if min_lon is not None and coords["lon"] < min_lon:
+        return False
+    if max_lon is not None and coords["lon"] > max_lon:
+        return False
+    return True
+
+
+def _application_context(application) -> dict:
+    context = _official_context_summary()
+    organisation_entity = str(application.raw_payload.get("organisation-entity") or "").strip()
+    raw_entity = str(application.raw_payload.get("entity") or "").strip()
+    point = _parse_point_wkt(application.raw_payload.get("point"))
+
+    def same_org(records: list[dict]) -> list[dict]:
+        if not organisation_entity:
+            return []
+        return [item for item in records if str(item.get("organisation_entity") or "").strip() == organisation_entity][:8]
+
+    linked_developer_agreements = []
+    for item in context["developer_agreements"]["recent"]:
+        planning_application = str(item.get("planning_application") or "").strip()
+        if raw_entity and planning_application == raw_entity:
+            linked_developer_agreements.append(item)
+        elif application.source_reference and planning_application == application.source_reference:
+            linked_developer_agreements.append(item)
+
+    nearby_counts = {
+        "brownfield_within_5km": 0,
+        "green_belt_within_5km": 0,
+        "developer_agreements_within_5km": 0,
+    }
+    if point:
+        for item in context["brownfield"]["recent"]:
+            coords = _parse_point_wkt(item.get("point"))
+            if coords and _distance_km(point["lat"], point["lon"], coords["lat"], coords["lon"]) <= 5:
+                nearby_counts["brownfield_within_5km"] += 1
+        for item in context["green_belt"]["recent"]:
+            coords = _parse_point_wkt(item.get("point"))
+            if coords and _distance_km(point["lat"], point["lon"], coords["lat"], coords["lon"]) <= 5:
+                nearby_counts["green_belt_within_5km"] += 1
+        for item in context["developer_agreements"]["recent"]:
+            coords = _parse_point_wkt(item.get("point"))
+            if coords and _distance_km(point["lat"], point["lon"], coords["lat"], coords["lon"]) <= 5:
+                nearby_counts["developer_agreements_within_5km"] += 1
+
+    return {
+        "authority_matches": {
+            "article_4": same_org(context["article_4"]["recent"]),
+            "brownfield": same_org(context["brownfield"]["recent"]),
+            "green_belt": same_org(context["green_belt"]["recent"]),
+            "developer_agreements": same_org(context["developer_agreements"]["recent"]),
+        },
+        "linked_developer_agreements": linked_developer_agreements,
+        "nearby_counts": nearby_counts,
+    }
+
+
 def _map_payload(
     *,
     center_lat: float | None = None,
@@ -164,18 +325,16 @@ def _map_payload(
     for app in applications:
         point = app.raw_payload.get("point")
         coords = _parse_point_wkt(point)
-        if coords:
-            if center_lat is not None and center_lon is not None and radius_km is not None:
-                if _distance_km(center_lat, center_lon, coords["lat"], coords["lon"]) > radius_km:
-                    continue
-            if min_lat is not None and coords["lat"] < min_lat:
-                continue
-            if max_lat is not None and coords["lat"] > max_lat:
-                continue
-            if min_lon is not None and coords["lon"] < min_lon:
-                continue
-            if max_lon is not None and coords["lon"] > max_lon:
-                continue
+        if coords and _coords_match_filters(
+            coords,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon,
+        ):
             plotted_apps.append(
                 {
                     "application_id": app.application_id,
@@ -193,18 +352,16 @@ def _map_payload(
     plotted_brownfield = []
     for item in brownfield["records"]:
         coords = _parse_point_wkt(item.get("point"))
-        if coords:
-            if center_lat is not None and center_lon is not None and radius_km is not None:
-                if _distance_km(center_lat, center_lon, coords["lat"], coords["lon"]) > radius_km:
-                    continue
-            if min_lat is not None and coords["lat"] < min_lat:
-                continue
-            if max_lat is not None and coords["lat"] > max_lat:
-                continue
-            if min_lon is not None and coords["lon"] < min_lon:
-                continue
-            if max_lon is not None and coords["lon"] > max_lon:
-                continue
+        if coords and _coords_match_filters(
+            coords,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon,
+        ):
             plotted_brownfield.append(
                 {
                     "reference": item.get("reference"),
@@ -217,12 +374,66 @@ def _map_payload(
                 }
             )
 
+    green_belt = fetch_overlay_dataset("green-belt", limit=200)
+    plotted_green_belt = []
+    for item in green_belt["records"]:
+        coords = _parse_point_wkt(item.get("point"))
+        if coords and _coords_match_filters(
+            coords,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon,
+        ):
+            plotted_green_belt.append(
+                {
+                    "reference": item.get("reference"),
+                    "name": item.get("name") or item.get("reference"),
+                    "green_belt_core": item.get("green-belt-core"),
+                    "local_authority_district": item.get("local-authority-district"),
+                    "lat": coords["lat"],
+                    "lon": coords["lon"],
+                }
+            )
+
+    developer_agreements = fetch_overlay_dataset("developer-agreement", limit=200)
+    plotted_developer_agreements = []
+    for item in developer_agreements["records"]:
+        coords = _parse_point_wkt(item.get("point"))
+        if coords and _coords_match_filters(
+            coords,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon,
+        ):
+            plotted_developer_agreements.append(
+                {
+                    "reference": item.get("reference"),
+                    "planning_application": item.get("planning-application"),
+                    "developer_agreement_type": item.get("developer-agreement-type"),
+                    "document_url": item.get("document-url"),
+                    "lat": coords["lat"],
+                    "lon": coords["lon"],
+                }
+            )
+
     return {
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "applications": plotted_apps[:150],
         "brownfield": plotted_brownfield[:150],
+        "green_belt": plotted_green_belt[:150],
+        "developer_agreements": plotted_developer_agreements[:150],
         "application_count": len(plotted_apps),
         "brownfield_count": len(plotted_brownfield),
+        "green_belt_count": len(plotted_green_belt),
+        "developer_agreement_count": len(plotted_developer_agreements),
         "filter": {
             "center_lat": center_lat,
             "center_lon": center_lon,
@@ -243,6 +454,7 @@ def _record_usage(context: AuthenticatedContext | None, metric: str) -> None:
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    start_scheduler()
 
 
 @app.get("/health")
@@ -361,6 +573,19 @@ def auth_login(payload: UserLoginRequest) -> dict:
     return session.model_dump(mode="json")
 
 
+@app.post("/auth/accept-invite")
+def auth_accept_invite(payload: InvitationAcceptRequest) -> dict:
+    try:
+        invitation, user, session = accept_organization_invitation(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "invitation": invitation.model_dump(mode="json"),
+        "user": user.model_dump(mode="json"),
+        "session": session.model_dump(mode="json"),
+    }
+
+
 @app.get("/me")
 def me(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
     _record_usage(context, "me_requests")
@@ -369,6 +594,110 @@ def me(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
         "context": context.model_dump(mode="json"),
         "user": profile.model_dump(mode="json") if profile else None,
     }
+
+
+@app.get("/org/users")
+def organization_users(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "organization_user_list_requests")
+    require_admin_session_context(context, action="List organization users")
+    return [item.model_dump(mode="json") for item in list_organization_users(context.organization_id)]
+
+
+@app.get("/org/invitations")
+def organization_invitations(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "organization_invitation_list_requests")
+    require_admin_session_context(context, action="List organization invitations")
+    return [item.model_dump(mode="json") for item in list_organization_invitations(context.organization_id)]
+
+
+@app.post("/org/invitations")
+def create_org_invitation(
+    payload: OrganizationInvitationCreateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "organization_invitation_create_requests")
+    require_owner_session_context(context, action="Create organization invitations")
+    try:
+        invitation = create_organization_invitation(
+            context.organization_id,
+            payload,
+            invited_by_user_id=context.user_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return invitation.model_dump(mode="json")
+
+
+@app.post("/org/users")
+def create_org_user(
+    payload: OrganizationUserCreateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "organization_user_create_requests")
+    require_owner_session_context(context, action="Create organization users")
+    try:
+        user = create_organization_user(context.organization_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return user.model_dump(mode="json")
+
+
+@app.put("/org/users/{user_id}/role")
+def update_org_user_role(
+    user_id: str,
+    payload: UserRoleUpdateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "organization_user_role_update_requests")
+    require_owner_session_context(context, action="Update organization user roles")
+    try:
+        user = update_organization_user_role(
+            context.organization_id,
+            user_id,
+            payload,
+            acting_user_id=context.user_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not user:
+        raise HTTPException(status_code=404, detail="Organization user not found")
+    return user.model_dump(mode="json")
+
+
+@app.delete("/org/users/{user_id}")
+def delete_org_user(
+    user_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "organization_user_delete_requests")
+    require_owner_session_context(context, action="Delete organization users")
+    try:
+        deleted = delete_organization_user(
+            context.organization_id,
+            user_id,
+            acting_user_id=context.user_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Organization user not found")
+    return {"user_id": user_id, "deleted": True}
+
+
+@app.delete("/org/invitations/{invitation_id}")
+def delete_org_invitation(
+    invitation_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "organization_invitation_delete_requests")
+    require_owner_session_context(context, action="Revoke organization invitations")
+    try:
+        invitation = revoke_organization_invitation(context.organization_id, invitation_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Organization invitation not found")
+    return invitation.model_dump(mode="json")
 
 
 @app.get("/api-keys")
@@ -383,8 +712,7 @@ def create_api_key(
     context: AuthenticatedContext = Depends(require_api_key),
 ) -> dict:
     _record_usage(context, "api_key_create_requests")
-    if context.auth_method != "session":
-        raise HTTPException(status_code=403, detail="Create API keys with a user session")
+    require_admin_session_context(context, action="Create API keys")
     return create_api_key_record(context.organization_id, payload.label).model_dump(mode="json")
 
 
@@ -429,6 +757,11 @@ def map_data(
     )
 
 
+@app.get("/applications/view/{application_id}", response_class=HTMLResponse)
+def application_detail_page(application_id: str) -> str:
+    return _render_template("application_detail.html")
+
+
 @app.get("/applications")
 def list_applications(
     area_id: str | None = Query(default=None),
@@ -466,6 +799,22 @@ def get_application(
         if application.application_id == application_id:
             return application.model_dump(mode="json")
 
+    raise HTTPException(status_code=404, detail="Application not found")
+
+
+@app.get("/applications/{application_id}/context")
+def get_application_context(
+    application_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "application_context_requests")
+    applications = _load_applications()
+    for application in applications:
+        if application.application_id == application_id:
+            return {
+                "application": {**application.model_dump(mode="json"), "source_kind": get_source_kind(application.source_system)},
+                "context": _application_context(application),
+            }
     raise HTTPException(status_code=404, detail="Application not found")
 
 
@@ -526,6 +875,14 @@ def create_watchlist(
     context: AuthenticatedContext = Depends(require_api_key),
 ) -> dict:
     _record_usage(context, "watchlist_create_requests")
+    if payload.delivery_mode == "webhook":
+        require_admin_session_context(context, action="Create webhook watchlists")
+        endpoint = get_webhook_endpoint(context.organization_id, payload.webhook_endpoint_id or "")
+        if not endpoint:
+            raise HTTPException(
+                status_code=400,
+                detail="webhook_endpoint_id must match an existing webhook endpoint for this organization.",
+            )
     return create_watchlist_record(context.organization_id, payload).model_dump(mode="json")
 
 
@@ -550,6 +907,57 @@ def fetch_watchlist(
     return watchlist.model_dump(mode="json")
 
 
+@app.put("/watchlists/{watchlist_id}")
+def update_watchlist(
+    watchlist_id: str,
+    payload: WatchlistUpdateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "watchlist_update_requests")
+    if payload.delivery_mode == "webhook":
+        require_admin_session_context(context, action="Update webhook watchlists")
+        endpoint = get_webhook_endpoint(context.organization_id, payload.webhook_endpoint_id or "")
+        if not endpoint:
+            raise HTTPException(
+                status_code=400,
+                detail="webhook_endpoint_id must match an existing webhook endpoint for this organization.",
+            )
+    watchlist = update_watchlist_record(context.organization_id, watchlist_id, payload)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return watchlist.model_dump(mode="json")
+
+
+@app.delete("/watchlists/{watchlist_id}")
+def delete_watchlist(
+    watchlist_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "watchlist_delete_requests")
+    require_admin_session_context(context, action="Delete watchlists")
+    deleted = delete_watchlist_record(context.organization_id, watchlist_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return {"watchlist_id": watchlist_id, "deleted": True}
+
+
+@app.post("/watchlists/{watchlist_id}/link-webhook")
+def link_watchlist_to_webhook(
+    watchlist_id: str,
+    payload: WatchlistWebhookLinkRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "watchlist_webhook_link_requests")
+    require_admin_session_context(context, action="Link webhooks")
+    endpoint = get_webhook_endpoint(context.organization_id, payload.webhook_endpoint_id)
+    if not endpoint:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    watchlist = link_watchlist_webhook(context.organization_id, watchlist_id, payload)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return watchlist.model_dump(mode="json")
+
+
 @app.get("/watchlists/{watchlist_id}/changes")
 def get_watchlist_changes(
     watchlist_id: str,
@@ -564,6 +972,66 @@ def get_watchlist_changes(
     return [change.model_dump(mode="json") for change in changes]
 
 
+@app.post("/watchlists/{watchlist_id}/deliver")
+def deliver_watchlist_webhook(
+    watchlist_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "watchlist_webhook_deliver_requests")
+    require_admin_session_context(context, action="Deliver watchlist webhooks")
+    watchlist = get_watchlist_record(context.organization_id, watchlist_id)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    if watchlist.delivery_mode != "webhook" or not watchlist.webhook_endpoint_id:
+        raise HTTPException(status_code=400, detail="Watchlist not configured for webhook delivery")
+    endpoint = get_webhook_endpoint(context.organization_id, watchlist.webhook_endpoint_id)
+    if not endpoint:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    applications = [app for app in _load_applications() if get_source_kind(app.source_system) == "official"]
+    changes = watchlist_changes(watchlist, applications)
+    payload = build_watchlist_alert_payload(
+        watchlist,
+        applications,
+        organization_id=context.organization_id,
+    )
+    if payload["summary"]["delivered_change_count"] == 0:
+        return {
+            "watchlist_id": watchlist.watchlist_id,
+            "delivery_status": "skipped",
+            "change_count": payload["summary"]["matched_change_count"],
+            "delivered_change_count": 0,
+            "reason": payload["summary"]["note"],
+        }
+    delivery = queue_webhook_delivery(
+        context.organization_id,
+        target_url=endpoint.target_url,
+        event_type="watchlist.alert",
+        payload=payload,
+        payload_preview=f"{watchlist.name}: {payload['summary']['delivered_change_count']} delivered of {payload['summary']['matched_change_count']} matched",
+        related_webhook_id=endpoint.webhook_id,
+    )
+    result = dispatch_webhook_delivery(
+        delivery_id=delivery.delivery_id,
+        organization_id=context.organization_id,
+        target_url=endpoint.target_url,
+        event_type="watchlist.alert",
+        payload=payload,
+        attempts_so_far=delivery.delivery_attempts,
+        related_webhook_id=endpoint.webhook_id,
+    )
+    if result["delivery_status"] == "sent":
+        mark_watchlist_webhook_sent(context.organization_id, watchlist.watchlist_id)
+    return {
+        "watchlist_id": watchlist.watchlist_id,
+        "delivery_id": delivery.delivery_id,
+        "delivery_status": result["delivery_status"],
+        "change_count": payload["summary"]["matched_change_count"],
+        "delivered_change_count": payload["summary"]["delivered_change_count"],
+        "failure_reason": result["failure_reason"],
+        "next_attempt_at": result["next_attempt_at"],
+    }
+
+
 @app.post("/alerts/test")
 def test_alert(
     payload: AlertTestRequest,
@@ -573,6 +1041,43 @@ def test_alert(
     target = payload.email or payload.webhook_url or payload.watchlist_id or "preview"
     channel = "email" if payload.email else "webhook" if payload.webhook_url else "watchlist"
     preview = f"PlanSignal test alert queued for {target}. Delivery mode {channel} ready for pilot workflows."
+    if payload.webhook_url:
+        delivery = queue_webhook_delivery(
+            context.organization_id,
+            target_url=payload.webhook_url,
+            event_type="alert.test",
+            payload={
+                "event": "alert.test",
+                "organization_id": context.organization_id,
+                "preview": preview,
+            },
+            payload_preview=preview,
+            related_webhook_id=None,
+            signing_secret=(payload.webhook_secret or "").strip() or None,
+        )
+        result = dispatch_webhook_delivery(
+            delivery_id=delivery.delivery_id,
+            organization_id=context.organization_id,
+            target_url=payload.webhook_url,
+            event_type="alert.test",
+            payload={
+                "event": "alert.test",
+                "organization_id": context.organization_id,
+                "preview": preview,
+            },
+            attempts_so_far=delivery.delivery_attempts,
+            signing_secret=(payload.webhook_secret or "").strip() or None,
+        )
+        return {
+            "status": "queued" if result["delivery_status"] in {"sent", "queued"} else "simulated",
+            "channel": channel,
+            "target": target,
+            "preview": preview,
+            "webhook_delivery_id": delivery.delivery_id,
+            "delivery_status": result["delivery_status"],
+            "failure_reason": result["failure_reason"],
+            "next_attempt_at": result["next_attempt_at"],
+        }
     return {
         "status": "simulated",
         "channel": channel,
@@ -662,6 +1167,14 @@ def dashboard_summary(
                 "loaded_count": official_context["brownfield"]["loaded_count"],
                 "total_available": official_context["brownfield"]["total_available"],
             },
+            "green_belt": {
+                "loaded_count": official_context["green_belt"]["loaded_count"],
+                "total_available": official_context["green_belt"]["total_available"],
+            },
+            "developer_agreements": {
+                "loaded_count": official_context["developer_agreements"]["loaded_count"],
+                "total_available": official_context["developer_agreements"]["total_available"],
+            },
         },
         "applications": [{**app.model_dump(mode="json"), "source_kind": "official"} for app in applications[:20]],
         "signals": [signal.model_dump(mode="json") for signal in high_priority_signals(applications)[:12]],
@@ -679,6 +1192,7 @@ def reports_summary(context: AuthenticatedContext = Depends(require_api_key)) ->
     envelope = fetch_planning_data(limit=500)
     applications = [app for app in normalize_envelope(envelope) if get_source_kind(app.source_system) == "official"]
     signals = high_priority_signals(applications)
+    official_context = _official_context_summary()
     by_status: dict[str, int] = {}
     by_category: dict[str, int] = {}
     for app in applications:
@@ -691,6 +1205,12 @@ def reports_summary(context: AuthenticatedContext = Depends(require_api_key)) ->
         "status_counts": by_status,
         "category_counts": by_category,
         "top_boroughs": [row.model_dump(mode="json") for row in benchmark_boroughs(applications)[:10]],
+        "official_context_counts": {
+            "article_4": official_context["article_4"]["loaded_count"],
+            "brownfield": official_context["brownfield"]["loaded_count"],
+            "green_belt": official_context["green_belt"]["loaded_count"],
+            "developer_agreements": official_context["developer_agreements"]["loaded_count"],
+        },
     }
 
 
@@ -718,6 +1238,33 @@ def save_report(
 def saved_reports(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
     _record_usage(context, "saved_report_list_requests")
     return [item.model_dump(mode="json") for item in list_saved_reports(context.organization_id)]
+
+
+@app.put("/reports/saved/{report_id}")
+def update_saved_report(
+    report_id: str,
+    payload: SavedReportUpdateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "saved_report_update_requests")
+    require_admin_session_context(context, action="Update saved reports")
+    entry = update_saved_report_record(context.organization_id, report_id, payload)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Saved report not found")
+    return entry.model_dump(mode="json")
+
+
+@app.delete("/reports/saved/{report_id}")
+def delete_saved_report(
+    report_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "saved_report_delete_requests")
+    require_admin_session_context(context, action="Delete saved reports")
+    deleted = delete_saved_report_record(context.organization_id, report_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Saved report not found")
+    return {"report_id": report_id, "deleted": True}
 
 
 @app.get("/reports/saved/{report_id}")
@@ -748,6 +1295,7 @@ def create_report_schedule(
     context: AuthenticatedContext = Depends(require_api_key),
 ) -> dict:
     _record_usage(context, "scheduled_report_create_requests")
+    require_admin_session_context(context, action="Create scheduled reports")
     entry = create_scheduled_report(context.organization_id, payload)
     return entry.model_dump(mode="json")
 
@@ -758,34 +1306,50 @@ def report_schedules(context: AuthenticatedContext = Depends(require_api_key)) -
     return [item.model_dump(mode="json") for item in list_scheduled_reports(context.organization_id)]
 
 
+@app.put("/reports/scheduled/{schedule_id}")
+def update_report_schedule(
+    schedule_id: str,
+    payload: ScheduledReportUpdateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "scheduled_report_update_requests")
+    require_admin_session_context(context, action="Update scheduled reports")
+    entry = update_scheduled_report_record(context.organization_id, schedule_id, payload)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Scheduled report not found")
+    return entry.model_dump(mode="json")
+
+
+@app.delete("/reports/scheduled/{schedule_id}")
+def delete_report_schedule(
+    schedule_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "scheduled_report_delete_requests")
+    require_admin_session_context(context, action="Delete scheduled reports")
+    deleted = delete_scheduled_report_record(context.organization_id, schedule_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Scheduled report not found")
+    return {"schedule_id": schedule_id, "deleted": True}
+
+
 @app.post("/reports/scheduled/{schedule_id}/run")
 def run_report_schedule(
     schedule_id: str,
     context: AuthenticatedContext = Depends(require_api_key),
 ) -> dict:
     _record_usage(context, "scheduled_report_run_requests")
+    require_admin_session_context(context, action="Run scheduled reports")
     schedule = get_scheduled_report(context.organization_id, schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="Scheduled report not found")
-
-    envelope = fetch_planning_data(limit=500)
-    applications = normalize_envelope(envelope)
-    applications = filter_applications(applications, area_id=schedule.area_id, keyword=schedule.keyword)
-    applications = [app for app in applications if get_source_kind(app.source_system) == "official"]
-    signals = high_priority_signals(applications)
-    email = queue_email_delivery(
-        context.organization_id,
-        recipient=schedule.delivery_email,
-        subject=f"PlanSignal scheduled report: {schedule.name}",
-        body_preview=f"{len(applications)} applications, {len(signals)} signals for area={schedule.area_id or 'all'} keyword={schedule.keyword or 'none'}",
-        related_schedule_id=schedule.schedule_id,
-    )
-    mark_scheduled_report_ran(context.organization_id, schedule.schedule_id)
+    result = run_schedule_now(schedule)
+    email = next((item for item in list_email_outbox(context.organization_id) if item.email_id == result["queued_email_id"]), None)
     return {
         "schedule_id": schedule.schedule_id,
-        "queued_email": email.model_dump(mode="json"),
-        "application_count": len(applications),
-        "signal_count": len(signals),
+        "queued_email": email.model_dump(mode="json") if email else {"email_id": result["queued_email_id"]},
+        "application_count": result["applications"],
+        "delivery_status": result["delivery_status"],
     }
 
 
@@ -793,6 +1357,146 @@ def run_report_schedule(
 def email_outbox(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
     _record_usage(context, "email_outbox_requests")
     return [item.model_dump(mode="json") for item in list_email_outbox(context.organization_id)]
+
+
+@app.post("/webhooks/endpoints")
+def create_webhook(
+    payload: WebhookEndpointCreateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "webhook_endpoint_create_requests")
+    require_admin_session_context(context, action="Create webhook endpoints")
+    return create_webhook_endpoint(context.organization_id, payload).model_dump(mode="json")
+
+
+@app.get("/webhooks/endpoints")
+def webhook_endpoints(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "webhook_endpoint_list_requests")
+    return [item.model_dump(mode="json") for item in list_webhook_endpoints(context.organization_id)]
+
+
+@app.put("/webhooks/endpoints/{webhook_id}")
+def update_webhook(
+    webhook_id: str,
+    payload: WebhookEndpointUpdateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "webhook_endpoint_update_requests")
+    require_admin_session_context(context, action="Update webhook endpoints")
+    endpoint = update_webhook_endpoint_record(context.organization_id, webhook_id, payload)
+    if not endpoint:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    return endpoint.model_dump(mode="json")
+
+
+@app.delete("/webhooks/endpoints/{webhook_id}")
+def delete_webhook(
+    webhook_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "webhook_endpoint_delete_requests")
+    require_admin_session_context(context, action="Delete webhook endpoints")
+    deleted = delete_webhook_endpoint_record(context.organization_id, webhook_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    return {"webhook_id": webhook_id, "deleted": True}
+
+
+@app.post("/webhooks/endpoints/{webhook_id}/rotate-secret")
+def rotate_webhook_secret(
+    webhook_id: str,
+    payload: WebhookEndpointSecretRotateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "webhook_endpoint_rotate_secret_requests")
+    require_admin_session_context(context, action="Rotate webhook secrets")
+    endpoint = rotate_webhook_endpoint_secret(
+        context.organization_id,
+        webhook_id,
+        signing_secret=payload.signing_secret,
+    )
+    if not endpoint:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    return endpoint.model_dump(mode="json")
+
+
+@app.post("/webhooks/endpoints/{webhook_id}/test")
+def test_webhook_endpoint(
+    webhook_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "webhook_endpoint_test_requests")
+    require_admin_session_context(context, action="Test webhook endpoints")
+    endpoint = get_webhook_endpoint(context.organization_id, webhook_id)
+    if not endpoint:
+        raise HTTPException(status_code=404, detail="Webhook endpoint not found")
+    preview = f"PlanSignal webhook test for {endpoint.label}"
+    delivery = queue_webhook_delivery(
+        context.organization_id,
+        target_url=endpoint.target_url,
+        event_type="webhook.endpoint.test",
+        payload={
+            "event": "webhook.endpoint.test",
+            "organization_id": context.organization_id,
+            "webhook_id": endpoint.webhook_id,
+            "label": endpoint.label,
+            "preview": preview,
+        },
+        payload_preview=preview,
+        related_webhook_id=endpoint.webhook_id,
+    )
+    result = dispatch_webhook_delivery(
+        delivery_id=delivery.delivery_id,
+        organization_id=context.organization_id,
+        target_url=endpoint.target_url,
+        event_type="webhook.endpoint.test",
+        payload={
+            "event": "webhook.endpoint.test",
+            "organization_id": context.organization_id,
+            "webhook_id": endpoint.webhook_id,
+            "label": endpoint.label,
+            "preview": preview,
+        },
+        attempts_so_far=delivery.delivery_attempts,
+        related_webhook_id=endpoint.webhook_id,
+    )
+    return {
+        "webhook_id": endpoint.webhook_id,
+        "delivery_id": delivery.delivery_id,
+        "delivery_status": result["delivery_status"],
+        "target_url": endpoint.target_url,
+        "failure_reason": result["failure_reason"],
+        "next_attempt_at": result["next_attempt_at"],
+    }
+
+
+@app.get("/webhooks/deliveries")
+def webhook_deliveries(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "webhook_delivery_list_requests")
+    return [item.model_dump(mode="json") for item in list_webhook_deliveries(context.organization_id)]
+
+
+@app.get("/ops/scheduler")
+def scheduler_ops(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "scheduler_status_requests")
+    return scheduler_status(context.organization_id).model_dump(mode="json")
+
+
+@app.post("/ops/scheduler/run")
+def scheduler_run(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "scheduler_run_requests")
+    require_admin_session_context(context, action="Run scheduler")
+    due_result = run_due_schedules_once()
+    watchlist_result = run_watchlist_webhooks_once()
+    webhook_delivery_result = deliver_pending_webhooks_once()
+    delivery_result = deliver_pending_outbox_once()
+    return {
+        "scheduler": scheduler_status(context.organization_id).model_dump(mode="json"),
+        "due_result": due_result,
+        "watchlist_result": watchlist_result,
+        "webhook_delivery_result": webhook_delivery_result,
+        "delivery_result": delivery_result,
+    }
 
 
 @app.get("/exports/applications.csv")
