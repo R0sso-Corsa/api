@@ -318,6 +318,132 @@ Why this matters:
 - membership flow is now closer to a real multi-user product
 - outbound email can be layered later without reworking core invite state
 
+## Stage 17. Enterprise Auth Hardening
+
+Auth hardening now lives in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+- [`plansignal/app/services/db.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/db.py)
+- [`plansignal/app/services/auth.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/auth.py)
+
+Added:
+
+- expiring sessions with `PLANSIGNAL_SESSION_TTL_HOURS`
+- session revocation via logout
+- role policy visibility endpoint for owner/admin review
+- persisted revoked session state
+
+Why this matters:
+
+- bearer sessions are no longer permanent tokens
+- logout has server-side effect
+- role permissions are visible and ready for deeper product gating
+
+## Stage 18. Billing Foundation
+
+Billing now lives in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+- [`plansignal/app/services/db.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/db.py)
+- [`plansignal/app/config.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/config.py)
+
+Added:
+
+- persisted billing subscriptions
+- checkout-session creation
+- billing portal-session creation
+- local mock checkout mode when Stripe credentials are absent
+- Stripe webhook-shaped endpoint for checkout completion events
+
+Why this matters:
+
+- the product now has a durable billing state model
+- local development works without Stripe secrets
+- real Stripe session creation can be swapped behind the existing endpoints
+
+## Stage 19. Document Summarization Jobs
+
+Document summarization now lives in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+- [`plansignal/app/services/db.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/db.py)
+- [`plansignal/app/schemas.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/schemas.py)
+
+Added:
+
+- durable document summary job table
+- summary job list/detail endpoints
+- per-document summarize endpoint
+- deterministic local summarizer based on normalized application context
+- cached ready summary reuse unless forced
+
+Why this matters:
+
+- document summarization is now a job-backed product feature
+- external LLM/pdf extraction can replace the local summary body later
+- API consumers can track summary status instead of relying on ad hoc fields
+
+## Stage 20. Relational Spatial / PostGIS Readiness
+
+Spatial readiness now lives in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+- [`plansignal/app/services/db.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/db.py)
+
+Added:
+
+- relational spatial index table for normalized application coordinates
+- spatial index rebuild endpoint
+- spatial index list endpoint
+- readiness endpoint explaining current SQLite mode and PostGIS migration path
+
+Why this matters:
+
+- location data is no longer only embedded in normalized application payloads
+- the app now has a clear migration seam for PostGIS geometry columns
+- spatial search/indexing can evolve without rewriting normalized application reads
+
+## Stage 21. Ingestion Backfills and Operations
+
+Ingestion operations now live in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+- [`plansignal/app/services/db.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/db.py)
+- [`plansignal/app/services/ingestion.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/services/ingestion.py)
+
+Added:
+
+- durable ingestion job table
+- admin-only backfill endpoint
+- ingestion job list endpoint
+- planning application backfill summary
+- authority index and overlay refresh job modes
+- sample fallback support for local/offline execution
+
+Why this matters:
+
+- ingestion work is now observable instead of only request/response
+- operators can run controlled backfills from API/admin flows
+- scheduled ingestion can reuse the same job model later
+
+## Stage 22. Role Policy Surface
+
+Role policy work now lives in:
+
+- [`plansignal/app/main.py`](/C:/Users/paron/Desktop/Dev/unrelated%20projects/api/plansignal/app/main.py)
+
+Added:
+
+- owner/admin/member role policy map
+- role policy endpoint
+- current user permission echo
+
+Why this matters:
+
+- membership permissions are explicit instead of implicit route behavior only
+- the UI/API can explain why an action is allowed or blocked
+- richer permission gating has a stable policy source
+
 ## Sample Data
 
 Fixture file:
@@ -349,8 +475,10 @@ Current endpoints:
 - `GET /`
 - `POST /auth/register`
 - `POST /auth/login`
+- `POST /auth/logout`
 - `POST /auth/accept-invite`
 - `GET /me`
+- `GET /org/roles`
 - `GET /org/users`
 - `GET /org/invitations`
 - `POST /org/invitations`
@@ -360,13 +488,24 @@ Current endpoints:
 - `DELETE /org/users/{user_id}`
 - `GET /api-keys`
 - `POST /api-keys`
+- `GET /billing/subscription`
+- `POST /billing/checkout-session`
+- `POST /billing/checkout-session/{session_id}/complete`
+- `POST /billing/portal-session`
+- `POST /billing/webhook/stripe`
 - `GET /applications/raw`
 - `GET /applications`
 - `GET /applications/{application_id}`
 - `GET /applications/{application_id}/history`
 - `GET /applications/{application_id}/documents`
+- `POST /applications/{application_id}/documents/{document_id}/summarize`
+- `GET /document-summaries/jobs`
+- `GET /document-summaries/jobs/{job_id}`
 - `GET /areas/{area_id}/activity`
 - `GET /actors/{actor_id}/applications`
+- `GET /spatial/readiness`
+- `POST /spatial/index/rebuild`
+- `GET /spatial/index`
 - `POST /reports/save`
 - `GET /reports/saved`
 - `PUT /reports/saved/{report_id}`
@@ -391,19 +530,22 @@ Current endpoints:
 - `POST /webhooks/endpoints/{webhook_id}/rotate-secret`
 - `POST /webhooks/endpoints/{webhook_id}/test`
 - `GET /webhooks/deliveries`
+- `GET /ops/ingestion/jobs`
+- `POST /ops/ingestion/backfill`
 - `GET /usage`
 - `GET /signals/high-priority`
 - `POST /screen/sites`
 - `GET /benchmark/boroughs`
 - `POST /natural-language-query`
 
-## What is not built yet
+## External Deployment Wiring Still Needed
 
-- enterprise auth hardening beyond demo/session/API-key flow
-- Stripe billing
-- real document summarization jobs
-- relational database / PostGIS
-- richer multi-role org permissions beyond owner/admin/member guardrails
-- historical backfills and scheduled ingestion jobs
+The local roadmap foundation is now implemented. Production deployment still needs environment-specific provisioning:
 
-Those belong to later roadmap phases, not this implementation pass.
+- real Stripe account, price IDs, webhook signing verification, and Stripe SDK/session creation
+- managed Postgres/PostGIS migration and data migration from local SQLite
+- production SSO/MFA provider if enterprise customers require it
+- external document extraction/LLM provider for richer summaries
+- scheduled worker process for recurring ingestion/backfills outside the API process
+
+Those are deployment/infrastructure tasks rather than missing local product foundations.

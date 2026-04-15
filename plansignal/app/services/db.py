@@ -9,17 +9,27 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from ..config import (
+    APP_BASE_URL,
     DEFAULT_SQLITE_DB,
     DEMO_API_KEY,
     DEMO_ORGANIZATION_NAME,
     DEMO_USER_EMAIL,
     DEMO_USER_PASSWORD,
+    SESSION_TTL_HOURS,
     STORE_DIR,
+    STRIPE_SECRET_KEY,
 )
 from ..schemas import (
     ApiKeyCreateResponse,
     ApiKeyInfo,
+    BillingCheckoutRequest,
+    BillingCheckoutSessionInfo,
+    BillingPortalSessionInfo,
+    BillingSubscriptionInfo,
+    DocumentSummaryJobInfo,
     EmailOutboxEntry,
+    IngestionJobCreateRequest,
+    IngestionJobInfo,
     InvitationAcceptRequest,
     OrganizationInvitationCreateRequest,
     OrganizationInvitationInfo,
@@ -36,6 +46,7 @@ from ..schemas import (
     UsageSnapshot,
     UserProfile,
     UserRoleUpdateRequest,
+    SpatialIndexEntry,
     Watchlist,
     WatchlistCreateRequest,
     WatchlistUpdateRequest,
@@ -49,6 +60,10 @@ from ..schemas import (
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _utc_after(**kwargs: int) -> str:
+    return (datetime.now(UTC) + timedelta(**kwargs)).isoformat()
 
 
 def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
@@ -127,6 +142,8 @@ def init_db() -> None:
                 user_id TEXT NOT NULL,
                 access_token TEXT NOT NULL UNIQUE,
                 created_at TEXT NOT NULL,
+                expires_at TEXT,
+                revoked_at TEXT,
                 FOREIGN KEY (organization_id) REFERENCES organizations (organization_id),
                 FOREIGN KEY (user_id) REFERENCES users (user_id)
             );
@@ -165,6 +182,68 @@ def init_db() -> None:
                 metric TEXT NOT NULL,
                 increment_value INTEGER NOT NULL,
                 created_at TEXT NOT NULL,
+                FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS billing_subscriptions (
+                organization_id TEXT PRIMARY KEY,
+                plan_tier TEXT NOT NULL,
+                status TEXT NOT NULL,
+                stripe_customer_id TEXT,
+                stripe_subscription_id TEXT,
+                current_period_end TEXT,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS billing_checkout_sessions (
+                session_id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
+                plan_tier TEXT NOT NULL,
+                checkout_url TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS document_summary_jobs (
+                job_id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
+                application_id TEXT NOT NULL,
+                document_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                summary TEXT,
+                source_url TEXT,
+                failure_reason TEXT,
+                created_at TEXT NOT NULL,
+                completed_at TEXT,
+                FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS ingestion_jobs (
+                job_id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
+                source TEXT NOT NULL,
+                status TEXT NOT NULL,
+                parameters_json TEXT NOT NULL,
+                result_json TEXT,
+                failure_reason TEXT,
+                created_at TEXT NOT NULL,
+                completed_at TEXT,
+                FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS spatial_index_entries (
+                entry_id TEXT PRIMARY KEY,
+                organization_id TEXT NOT NULL,
+                application_id TEXT NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                authority_name TEXT NOT NULL,
+                address TEXT NOT NULL,
+                source_system TEXT NOT NULL,
+                indexed_at TEXT NOT NULL,
                 FOREIGN KEY (organization_id) REFERENCES organizations (organization_id)
             );
 
@@ -250,6 +329,8 @@ def init_db() -> None:
             );
             """
         )
+        _ensure_column(cursor, "sessions", "expires_at", "expires_at TEXT")
+        _ensure_column(cursor, "sessions", "revoked_at", "revoked_at TEXT")
         _ensure_column(cursor, "api_keys", "label", "label TEXT NOT NULL DEFAULT 'Migrated key'")
         _ensure_column(cursor, "watchlists", "webhook_endpoint_id", "webhook_endpoint_id TEXT")
         _ensure_column(cursor, "watchlists", "last_webhook_sent_at", "last_webhook_sent_at TEXT")
@@ -262,6 +343,14 @@ def init_db() -> None:
         _ensure_column(cursor, "webhook_deliveries", "payload_json", "payload_json TEXT NOT NULL DEFAULT '{}'")
         _ensure_column(cursor, "webhook_deliveries", "signing_secret", "signing_secret TEXT")
         _ensure_column(cursor, "webhook_deliveries", "next_attempt_at", "next_attempt_at TEXT")
+        cursor.execute(
+            """
+            UPDATE sessions
+            SET expires_at = ?
+            WHERE expires_at IS NULL
+            """,
+            (_utc_after(hours=SESSION_TTL_HOURS),),
+        )
         cursor.execute(
             """
             SELECT webhook_id
@@ -309,6 +398,21 @@ def ensure_demo_org() -> None:
             """,
             ("key-demo", "org-demo", DEMO_API_KEY, DEMO_API_KEY[:12], "Default demo key", now),
         )
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO billing_subscriptions (
+                organization_id,
+                plan_tier,
+                status,
+                stripe_customer_id,
+                stripe_subscription_id,
+                current_period_end,
+                updated_at
+            )
+            VALUES (?, ?, ?, NULL, NULL, NULL, ?)
+            """,
+            ("org-demo", "starter", "trialing", now),
+        )
         connection.commit()
 
 
@@ -337,8 +441,10 @@ def authenticate_session(access_token: str) -> sqlite3.Row | None:
             JOIN organizations ON organizations.organization_id = sessions.organization_id
             JOIN users ON users.user_id = sessions.user_id
             WHERE sessions.access_token = ?
+              AND sessions.revoked_at IS NULL
+              AND (sessions.expires_at IS NULL OR sessions.expires_at > ?)
             """,
-            (access_token,),
+            (access_token, _utc_now()),
         )
         return cursor.fetchone()
 
@@ -355,10 +461,10 @@ def _create_session_response(
     token = f"psess_{secrets.token_urlsafe(24)}"
     cursor.execute(
         """
-        INSERT INTO sessions (session_id, organization_id, user_id, access_token, created_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO sessions (session_id, organization_id, user_id, access_token, created_at, expires_at, revoked_at)
+        VALUES (?, ?, ?, ?, ?, ?, NULL)
         """,
-        (f"session-{uuid4().hex[:10]}", organization_id, user_id, token, _utc_now()),
+        (f"session-{uuid4().hex[:10]}", organization_id, user_id, token, _utc_now(), _utc_after(hours=SESSION_TTL_HOURS)),
     )
     return SessionTokenResponse(
         access_token=token,
@@ -368,6 +474,22 @@ def _create_session_response(
         user_email=user_email,
         user_role=user_role,
     )
+
+
+def revoke_session(access_token: str) -> bool:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            UPDATE sessions
+            SET revoked_at = ?
+            WHERE access_token = ? AND revoked_at IS NULL
+            """,
+            (_utc_now(), access_token),
+        )
+        revoked = cursor.rowcount > 0
+        connection.commit()
+        return revoked
 
 
 def register_user(organization_name: str, full_name: str, email: str, password: str) -> UserProfile:
@@ -709,6 +831,412 @@ def delete_organization_user(
         deleted = cursor.rowcount > 0
         connection.commit()
     return deleted
+
+
+def get_billing_subscription(organization_id: str) -> BillingSubscriptionInfo:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT organization_id, plan_tier, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at
+            FROM billing_subscriptions
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return BillingSubscriptionInfo.model_validate(dict(row))
+        cursor.execute("SELECT plan_tier FROM organizations WHERE organization_id = ?", (organization_id,))
+        org = cursor.fetchone()
+        plan_tier = org["plan_tier"] if org else "starter"
+        if plan_tier not in {"starter", "growth", "scale", "enterprise"}:
+            plan_tier = "starter"
+        now = _utc_now()
+        cursor.execute(
+            """
+            INSERT INTO billing_subscriptions (
+                organization_id, plan_tier, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at
+            )
+            VALUES (?, ?, 'trialing', NULL, NULL, NULL, ?)
+            """,
+            (organization_id, plan_tier, now),
+        )
+        connection.commit()
+    return BillingSubscriptionInfo(
+        organization_id=organization_id,
+        plan_tier=plan_tier,
+        status="trialing",
+        updated_at=datetime.fromisoformat(now),
+    )
+
+
+def create_billing_checkout_session(
+    organization_id: str,
+    payload: BillingCheckoutRequest,
+) -> BillingCheckoutSessionInfo:
+    session_id = f"bcs-{uuid4().hex[:10]}"
+    now = _utc_now()
+    mode = "stripe" if STRIPE_SECRET_KEY else "mock"
+    checkout_url = (
+        f"{APP_BASE_URL.rstrip('/')}/billing/mock-checkout/{session_id}"
+        if mode == "mock"
+        else f"https://checkout.stripe.com/c/pay/{session_id}"
+    )
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO billing_checkout_sessions (session_id, organization_id, plan_tier, checkout_url, mode, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'created', ?)
+            """,
+            (session_id, organization_id, payload.plan_tier, checkout_url, mode, now),
+        )
+        connection.commit()
+    return BillingCheckoutSessionInfo(
+        session_id=session_id,
+        organization_id=organization_id,
+        plan_tier=payload.plan_tier,
+        checkout_url=checkout_url,
+        mode=mode,
+        status="created",
+        created_at=datetime.fromisoformat(now),
+    )
+
+
+def complete_billing_checkout_session(
+    organization_id: str,
+    session_id: str,
+    *,
+    status: str = "active",
+) -> BillingSubscriptionInfo | None:
+    now = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT plan_tier
+            FROM billing_checkout_sessions
+            WHERE organization_id = ? AND session_id = ?
+            """,
+            (organization_id, session_id),
+        )
+        checkout = cursor.fetchone()
+        if not checkout:
+            return None
+        cursor.execute(
+            """
+            UPDATE billing_checkout_sessions
+            SET status = 'completed'
+            WHERE organization_id = ? AND session_id = ?
+            """,
+            (organization_id, session_id),
+        )
+        cursor.execute(
+            """
+            INSERT INTO billing_subscriptions (
+                organization_id, plan_tier, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at
+            )
+            VALUES (?, ?, ?, NULL, NULL, NULL, ?)
+            ON CONFLICT(organization_id) DO UPDATE SET
+                plan_tier = excluded.plan_tier,
+                status = excluded.status,
+                updated_at = excluded.updated_at
+            """,
+            (organization_id, checkout["plan_tier"], status, now),
+        )
+        cursor.execute(
+            """
+            UPDATE organizations
+            SET plan_tier = ?
+            WHERE organization_id = ?
+            """,
+            (checkout["plan_tier"], organization_id),
+        )
+        connection.commit()
+    return get_billing_subscription(organization_id)
+
+
+def create_billing_portal_session(organization_id: str) -> BillingPortalSessionInfo:
+    mode = "stripe" if STRIPE_SECRET_KEY else "mock"
+    portal_url = (
+        f"{APP_BASE_URL.rstrip('/')}/billing/mock-portal/{organization_id}"
+        if mode == "mock"
+        else f"https://billing.stripe.com/p/session/{organization_id}"
+    )
+    return BillingPortalSessionInfo(portal_url=portal_url, mode=mode)
+
+
+def create_document_summary_job(
+    organization_id: str,
+    *,
+    application_id: str,
+    document_id: str,
+    source_url: str | None,
+) -> DocumentSummaryJobInfo:
+    now = _utc_now()
+    job_id = f"docsum-{uuid4().hex[:10]}"
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO document_summary_jobs (
+                job_id, organization_id, application_id, document_id, status, summary, source_url, failure_reason, created_at, completed_at
+            )
+            VALUES (?, ?, ?, ?, 'queued', NULL, ?, NULL, ?, NULL)
+            """,
+            (job_id, organization_id, application_id, document_id, source_url, now),
+        )
+        connection.commit()
+    return DocumentSummaryJobInfo(
+        job_id=job_id,
+        organization_id=organization_id,
+        application_id=application_id,
+        document_id=document_id,
+        status="queued",
+        source_url=source_url,
+        created_at=datetime.fromisoformat(now),
+    )
+
+
+def complete_document_summary_job(job_id: str, *, summary: str) -> DocumentSummaryJobInfo | None:
+    completed_at = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            UPDATE document_summary_jobs
+            SET status = 'ready', summary = ?, completed_at = ?, failure_reason = NULL
+            WHERE job_id = ?
+            """,
+            (summary, completed_at, job_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+        connection.commit()
+    return get_document_summary_job(job_id)
+
+
+def fail_document_summary_job(job_id: str, *, failure_reason: str) -> DocumentSummaryJobInfo | None:
+    completed_at = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            UPDATE document_summary_jobs
+            SET status = 'failed', failure_reason = ?, completed_at = ?
+            WHERE job_id = ?
+            """,
+            (failure_reason, completed_at, job_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+        connection.commit()
+    return get_document_summary_job(job_id)
+
+
+def get_document_summary_job(job_id: str) -> DocumentSummaryJobInfo | None:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT job_id, organization_id, application_id, document_id, status, summary, source_url, failure_reason, created_at, completed_at
+            FROM document_summary_jobs
+            WHERE job_id = ?
+            """,
+            (job_id,),
+        )
+        row = cursor.fetchone()
+        return DocumentSummaryJobInfo.model_validate(dict(row)) if row else None
+
+
+def get_latest_document_summary_job(
+    organization_id: str,
+    *,
+    application_id: str,
+    document_id: str,
+) -> DocumentSummaryJobInfo | None:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT job_id, organization_id, application_id, document_id, status, summary, source_url, failure_reason, created_at, completed_at
+            FROM document_summary_jobs
+            WHERE organization_id = ? AND application_id = ? AND document_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (organization_id, application_id, document_id),
+        )
+        row = cursor.fetchone()
+        return DocumentSummaryJobInfo.model_validate(dict(row)) if row else None
+
+
+def list_document_summary_jobs(organization_id: str) -> list[DocumentSummaryJobInfo]:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT job_id, organization_id, application_id, document_id, status, summary, source_url, failure_reason, created_at, completed_at
+            FROM document_summary_jobs
+            WHERE organization_id = ?
+            ORDER BY created_at DESC
+            """,
+            (organization_id,),
+        )
+        return [DocumentSummaryJobInfo.model_validate(dict(row)) for row in cursor.fetchall()]
+
+
+def create_ingestion_job(organization_id: str, payload: IngestionJobCreateRequest) -> IngestionJobInfo:
+    job_id = f"ingest-{uuid4().hex[:10]}"
+    now = _utc_now()
+    parameters = {
+        "area_id": payload.area_id,
+        "limit": payload.limit,
+        "use_sample_fallback": payload.use_sample_fallback,
+    }
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO ingestion_jobs (
+                job_id, organization_id, source, status, parameters_json, result_json, failure_reason, created_at, completed_at
+            )
+            VALUES (?, ?, ?, 'queued', ?, NULL, NULL, ?, NULL)
+            """,
+            (job_id, organization_id, payload.source, json.dumps(parameters, sort_keys=True), now),
+        )
+        connection.commit()
+    return IngestionJobInfo(
+        job_id=job_id,
+        organization_id=organization_id,
+        source=payload.source,
+        status="queued",
+        parameters=parameters,
+        created_at=datetime.fromisoformat(now),
+    )
+
+
+def complete_ingestion_job(job_id: str, *, result: dict) -> IngestionJobInfo | None:
+    completed_at = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            UPDATE ingestion_jobs
+            SET status = 'completed', result_json = ?, completed_at = ?, failure_reason = NULL
+            WHERE job_id = ?
+            """,
+            (json.dumps(result, sort_keys=True), completed_at, job_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+        connection.commit()
+    return get_ingestion_job(job_id)
+
+
+def fail_ingestion_job(job_id: str, *, failure_reason: str) -> IngestionJobInfo | None:
+    completed_at = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            UPDATE ingestion_jobs
+            SET status = 'failed', failure_reason = ?, completed_at = ?
+            WHERE job_id = ?
+            """,
+            (failure_reason, completed_at, job_id),
+        )
+        if cursor.rowcount == 0:
+            return None
+        connection.commit()
+    return get_ingestion_job(job_id)
+
+
+def get_ingestion_job(job_id: str) -> IngestionJobInfo | None:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT job_id, organization_id, source, status, parameters_json, result_json, failure_reason, created_at, completed_at
+            FROM ingestion_jobs
+            WHERE job_id = ?
+            """,
+            (job_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return IngestionJobInfo(
+            job_id=row["job_id"],
+            organization_id=row["organization_id"],
+            source=row["source"],
+            status=row["status"],
+            parameters=json.loads(row["parameters_json"]),
+            result=json.loads(row["result_json"]) if row["result_json"] else None,
+            failure_reason=row["failure_reason"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            completed_at=datetime.fromisoformat(row["completed_at"]) if row["completed_at"] else None,
+        )
+
+
+def list_ingestion_jobs(organization_id: str) -> list[IngestionJobInfo]:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT job_id
+            FROM ingestion_jobs
+            WHERE organization_id = ?
+            ORDER BY created_at DESC
+            """,
+            (organization_id,),
+        )
+        return [job for row in cursor.fetchall() if (job := get_ingestion_job(row["job_id"]))]
+
+
+def replace_spatial_index(organization_id: str, entries: list[dict]) -> int:
+    now = _utc_now()
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM spatial_index_entries WHERE organization_id = ?", (organization_id,))
+        for entry in entries:
+            cursor.execute(
+                """
+                INSERT INTO spatial_index_entries (
+                    entry_id, organization_id, application_id, latitude, longitude, authority_name, address, source_system, indexed_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    f"spatial-{uuid4().hex[:10]}",
+                    organization_id,
+                    entry["application_id"],
+                    entry["latitude"],
+                    entry["longitude"],
+                    entry["authority_name"],
+                    entry["address"],
+                    entry["source_system"],
+                    now,
+                ),
+            )
+        connection.commit()
+    return len(entries)
+
+
+def list_spatial_index_entries(organization_id: str) -> list[SpatialIndexEntry]:
+    with closing(_connect()) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT entry_id, application_id, organization_id, latitude, longitude, authority_name, address, source_system, indexed_at
+            FROM spatial_index_entries
+            WHERE organization_id = ?
+            ORDER BY indexed_at DESC
+            """,
+            (organization_id,),
+        )
+        return [SpatialIndexEntry.model_validate(dict(row)) for row in cursor.fetchall()]
 
 
 def accept_organization_invitation(

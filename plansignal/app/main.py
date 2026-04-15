@@ -5,7 +5,7 @@ import math
 from datetime import datetime
 from io import StringIO
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from fastapi.responses import StreamingResponse
 
@@ -15,6 +15,9 @@ from .schemas import (
     AlertTestRequest,
     ApiKeyCreateRequest,
     AuthenticatedContext,
+    BillingCheckoutRequest,
+    DocumentSummaryRequest,
+    IngestionJobCreateRequest,
     InvitationAcceptRequest,
     NaturalLanguageQueryRequest,
     OrganizationInvitationCreateRequest,
@@ -37,8 +40,17 @@ from .schemas import (
 )
 from .services.auth import require_admin_session_context, require_api_key, require_owner_session_context
 from .services.db import create_api_key as create_api_key_record
+from .services.db import complete_billing_checkout_session
+from .services.db import complete_document_summary_job
+from .services.db import complete_ingestion_job
+from .services.db import create_billing_checkout_session
+from .services.db import create_billing_portal_session
+from .services.db import create_document_summary_job
+from .services.db import create_ingestion_job
 from .services.db import create_organization_invitation
 from .services.db import create_organization_user
+from .services.db import fail_document_summary_job
+from .services.db import fail_ingestion_job
 from .services.db import delete_saved_report as delete_saved_report_record
 from .services.db import delete_organization_user
 from .services.db import accept_organization_invitation
@@ -52,8 +64,13 @@ from .services.db import get_saved_report
 from .services.db import get_scheduled_report
 from .services.db import get_user_profile
 from .services.db import init_db
+from .services.db import get_billing_subscription
+from .services.db import get_document_summary_job
+from .services.db import get_latest_document_summary_job
 from .services.db import list_api_keys
+from .services.db import list_document_summary_jobs
 from .services.db import list_email_outbox
+from .services.db import list_ingestion_jobs
 from .services.db import list_organization_invitations
 from .services.db import list_organization_users
 from .services.db import list_scheduled_reports
@@ -71,7 +88,9 @@ from .services.db import mark_watchlist_webhook_sent
 from .services.db import queue_webhook_delivery
 from .services.db import record_usage as record_usage_event
 from .services.db import register_user
+from .services.db import replace_spatial_index
 from .services.db import revoke_organization_invitation
+from .services.db import revoke_session
 from .services.db import rotate_webhook_endpoint_secret
 from .services.db import update_saved_report as update_saved_report_record
 from .services.db import update_scheduled_report as update_scheduled_report_record
@@ -79,7 +98,8 @@ from .services.db import update_organization_user_role
 from .services.db import update_watchlist as update_watchlist_record
 from .services.db import update_webhook_endpoint as update_webhook_endpoint_record
 from .services.db import usage_snapshot
-from .services.ingestion import fetch_authorities_live, fetch_overlay_dataset, fetch_planning_data
+from .services.db import list_spatial_index_entries
+from .services.ingestion import fetch_authorities_live, fetch_overlay_dataset, fetch_planning_data, fetch_sample_planning_data
 from .services.normalizer import build_area_activity, get_source_kind, normalize_envelope
 from .services.query import (
     actor_applications,
@@ -110,12 +130,40 @@ app = FastAPI(
 )
 
 
+ROLE_POLICIES = {
+    "owner": [
+        "read",
+        "manage_members",
+        "manage_billing",
+        "manage_integrations",
+        "manage_reports",
+        "run_operations",
+    ],
+    "admin": [
+        "read",
+        "manage_integrations",
+        "manage_reports",
+        "run_operations",
+    ],
+    "member": [
+        "read",
+        "manage_reports",
+    ],
+}
+
+
 def _render_template(name: str) -> str:
     return (TEMPLATES_DIR / name).read_text(encoding="utf-8")
 
 
-def _load_applications(*, area_id: str | None = None, live: bool = True):
-    envelope = fetch_planning_data(area_id=area_id)
+def _load_applications(
+    *,
+    area_id: str | None = None,
+    live: bool = True,
+    limit: int = 1000,
+    use_sample_fallback: bool = False,
+):
+    envelope = fetch_planning_data(area_id=area_id, limit=limit, use_sample_fallback=use_sample_fallback)
     return normalize_envelope(envelope)
 
 
@@ -451,6 +499,134 @@ def _record_usage(context: AuthenticatedContext | None, metric: str) -> None:
         record_usage_event(context.organization_id, metric)
 
 
+def _bearer_token(authorization: str | None) -> str | None:
+    if authorization and authorization.lower().startswith("bearer "):
+        return authorization.split(" ", 1)[1].strip()
+    return None
+
+
+def _find_application(application_id: str):
+    for application in _load_applications():
+        if application.application_id == application_id:
+            return application
+    return None
+
+
+def _find_application_document(application_id: str, document_id: str):
+    application = _find_application(application_id)
+    if not application:
+        return None, None
+    for document in application.documents:
+        if document.document_id == document_id:
+            return application, document
+    return application, None
+
+
+def _build_document_summary(application, document) -> str:
+    event_titles = [event.title for event in application.change_history[:3]]
+    event_text = "; ".join(event_titles) if event_titles else "No major events recorded."
+    published = document.published_date.isoformat() if document.published_date else "unknown date"
+    doc_type = document.document_type or "planning document"
+    return (
+        f"{document.title} is a {doc_type} published {published}. "
+        f"It relates to {application.site.address} under {application.source_reference}. "
+        f"Proposal: {application.proposal_text}. Current status: {application.status}. "
+        f"Recent context: {event_text}"
+    )
+
+
+def _float_or_none(value) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coordinates_from_application(application) -> dict[str, float] | None:
+    latitude = _float_or_none(application.site.latitude)
+    longitude = _float_or_none(application.site.longitude)
+    if latitude is not None and longitude is not None:
+        return {"lat": latitude, "lon": longitude}
+
+    raw = application.raw_payload or {}
+    for point_key in ("point", "geometry", "wkt"):
+        point = _parse_point_wkt(raw.get(point_key))
+        if point:
+            return point
+
+    latitude = None
+    longitude = None
+    for key in ("latitude", "lat", "y"):
+        latitude = _float_or_none(raw.get(key))
+        if latitude is not None:
+            break
+    for key in ("longitude", "lon", "lng", "x"):
+        longitude = _float_or_none(raw.get(key))
+        if longitude is not None:
+            break
+    if latitude is not None and longitude is not None:
+        return {"lat": latitude, "lon": longitude}
+    return None
+
+
+def _spatial_entries_from_applications(applications) -> list[dict]:
+    entries = []
+    for application in applications:
+        coordinates = _coordinates_from_application(application)
+        if not coordinates:
+            continue
+        entries.append(
+            {
+                "application_id": application.application_id,
+                "latitude": coordinates["lat"],
+                "longitude": coordinates["lon"],
+                "authority_name": application.authority.name,
+                "address": application.site.address,
+                "source_system": application.source_system,
+            }
+        )
+    return entries
+
+
+def _run_ingestion_job(job_id: str, payload: IngestionJobCreateRequest):
+    try:
+        if payload.source == "planning_applications":
+            envelope = fetch_planning_data(
+                area_id=payload.area_id,
+                limit=payload.limit,
+                use_sample_fallback=payload.use_sample_fallback,
+            )
+            normalized = normalize_envelope(envelope)
+            result = {
+                "source": envelope.source,
+                "raw_count": len(envelope.records),
+                "normalized_count": len(normalized),
+                "total_available": envelope.total_available,
+                "sample_fallback_allowed": payload.use_sample_fallback,
+            }
+        elif payload.source == "authority_index":
+            authorities = fetch_authorities_live()
+            result = {
+                "source": authorities["source"],
+                "authority_count": authorities["count"],
+            }
+        else:
+            datasets = ["article-4-direction", "brownfield-land", "green-belt", "developer-agreement"]
+            loaded = {}
+            for dataset in datasets:
+                overlay = fetch_overlay_dataset(dataset, limit=min(payload.limit, 500))
+                loaded[dataset] = {
+                    "loaded_count": overlay["loaded_count"],
+                    "total_available": overlay["total_available"],
+                }
+            result = {"datasets": loaded}
+        return complete_ingestion_job(job_id, result=result)
+    except Exception as exc:
+        return fail_ingestion_job(job_id, failure_reason=str(exc))
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
@@ -573,6 +749,19 @@ def auth_login(payload: UserLoginRequest) -> dict:
     return session.model_dump(mode="json")
 
 
+@app.post("/auth/logout")
+def auth_logout(
+    authorization: str | None = Header(default=None),
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    if context.auth_method != "session":
+        raise HTTPException(status_code=403, detail="Log out requires a session")
+    token = _bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=400, detail="Bearer token required for logout")
+    return {"revoked": revoke_session(token)}
+
+
 @app.post("/auth/accept-invite")
 def auth_accept_invite(payload: InvitationAcceptRequest) -> dict:
     try:
@@ -593,6 +782,17 @@ def me(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
     return {
         "context": context.model_dump(mode="json"),
         "user": profile.model_dump(mode="json") if profile else None,
+    }
+
+
+@app.get("/org/roles")
+def org_roles(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "organization_role_policy_requests")
+    require_admin_session_context(context, action="View organization role policies")
+    return {
+        "roles": ROLE_POLICIES,
+        "current_user_role": context.user_role,
+        "current_user_permissions": ROLE_POLICIES.get(context.user_role or "", []),
     }
 
 
@@ -716,6 +916,62 @@ def create_api_key(
     return create_api_key_record(context.organization_id, payload.label).model_dump(mode="json")
 
 
+@app.get("/billing/subscription")
+def billing_subscription(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "billing_subscription_requests")
+    require_admin_session_context(context, action="View billing subscription")
+    return get_billing_subscription(context.organization_id).model_dump(mode="json")
+
+
+@app.post("/billing/checkout-session")
+def billing_checkout_session(
+    payload: BillingCheckoutRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "billing_checkout_session_requests")
+    require_owner_session_context(context, action="Create billing checkout sessions")
+    session = create_billing_checkout_session(context.organization_id, payload)
+    return session.model_dump(mode="json")
+
+
+@app.post("/billing/checkout-session/{session_id}/complete")
+def billing_complete_checkout_session(
+    session_id: str,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "billing_checkout_complete_requests")
+    require_owner_session_context(context, action="Complete billing checkout sessions")
+    subscription = complete_billing_checkout_session(context.organization_id, session_id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Billing checkout session not found")
+    return subscription.model_dump(mode="json")
+
+
+@app.post("/billing/portal-session")
+def billing_portal_session(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "billing_portal_session_requests")
+    require_owner_session_context(context, action="Create billing portal sessions")
+    return create_billing_portal_session(context.organization_id).model_dump(mode="json")
+
+
+@app.post("/billing/webhook/stripe")
+def billing_stripe_webhook(payload: dict) -> dict:
+    event_type = payload.get("type") or payload.get("event")
+    data_object = (payload.get("data") or {}).get("object") or payload
+    metadata = data_object.get("metadata") or {}
+    organization_id = metadata.get("organization_id") or data_object.get("client_reference_id")
+    session_id = data_object.get("id") or data_object.get("session_id")
+    if event_type == "checkout.session.completed" and organization_id and session_id:
+        subscription = complete_billing_checkout_session(organization_id, session_id)
+        return {
+            "received": True,
+            "applied": bool(subscription),
+            "event_type": event_type,
+            "subscription": subscription.model_dump(mode="json") if subscription else None,
+        }
+    return {"received": True, "applied": False, "event_type": event_type}
+
+
 @app.get("/applications/raw")
 def raw_applications(
     area_id: str | None = Query(default=None),
@@ -755,6 +1011,59 @@ def map_data(
         min_lon=min_lon,
         max_lon=max_lon,
     )
+
+
+@app.get("/spatial/readiness")
+def spatial_readiness(context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "spatial_readiness_requests")
+    entries = list_spatial_index_entries(context.organization_id)
+    return {
+        "mode": "sqlite-spatial-index",
+        "postgis_ready": True,
+        "entry_count": len(entries),
+        "message": "Spatial rows are normalized into a relational index and can be migrated to PostGIS geometry columns later.",
+    }
+
+
+@app.post("/spatial/index/rebuild")
+def spatial_index_rebuild(
+    limit: int = Query(default=300, ge=1, le=5000),
+    include_sample_if_empty: bool = Query(default=True),
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "spatial_index_rebuild_requests")
+    require_admin_session_context(context, action="Rebuild spatial index")
+    envelope = fetch_planning_data(limit=limit, use_sample_fallback=True)
+    applications = normalize_envelope(envelope)
+    count = replace_spatial_index(context.organization_id, _spatial_entries_from_applications(applications))
+    source = envelope.source
+    sample_fallback_used = False
+    loaded_count = len(applications)
+
+    if count == 0 and include_sample_if_empty:
+        sample_envelope = fetch_sample_planning_data()
+        sample_applications = normalize_envelope(sample_envelope)
+        sample_entries = _spatial_entries_from_applications(sample_applications)
+        if sample_entries:
+            count = replace_spatial_index(context.organization_id, sample_entries)
+            source = sample_envelope.source
+            sample_fallback_used = True
+            loaded_count = len(sample_applications)
+
+    return {
+        "indexed_count": count,
+        "loaded_count": loaded_count,
+        "skipped_no_coordinates": max(loaded_count - count, 0),
+        "source": source,
+        "sample_fallback_used": sample_fallback_used,
+        "mode": "sqlite-spatial-index",
+    }
+
+
+@app.get("/spatial/index")
+def spatial_index(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "spatial_index_requests")
+    return [item.model_dump(mode="json") for item in list_spatial_index_entries(context.organization_id)]
 
 
 @app.get("/applications/view/{application_id}", response_class=HTMLResponse)
@@ -846,6 +1155,54 @@ def get_application_documents(
             return [document.model_dump(mode="json") for document in application.documents]
 
     raise HTTPException(status_code=404, detail="Application not found")
+
+
+@app.post("/applications/{application_id}/documents/{document_id}/summarize")
+def summarize_application_document(
+    application_id: str,
+    document_id: str,
+    payload: DocumentSummaryRequest | None = None,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "document_summary_requests")
+    application, document = _find_application_document(application_id, document_id)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    existing = get_latest_document_summary_job(
+        context.organization_id,
+        application_id=application_id,
+        document_id=document_id,
+    )
+    if existing and existing.status == "ready" and not (payload and payload.force):
+        return existing.model_dump(mode="json")
+    job = create_document_summary_job(
+        context.organization_id,
+        application_id=application_id,
+        document_id=document_id,
+        source_url=document.url,
+    )
+    try:
+        completed = complete_document_summary_job(job.job_id, summary=_build_document_summary(application, document))
+    except Exception as exc:
+        completed = fail_document_summary_job(job.job_id, failure_reason=str(exc))
+    return completed.model_dump(mode="json") if completed else job.model_dump(mode="json")
+
+
+@app.get("/document-summaries/jobs")
+def document_summary_jobs(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "document_summary_job_list_requests")
+    return [item.model_dump(mode="json") for item in list_document_summary_jobs(context.organization_id)]
+
+
+@app.get("/document-summaries/jobs/{job_id}")
+def document_summary_job(job_id: str, context: AuthenticatedContext = Depends(require_api_key)) -> dict:
+    _record_usage(context, "document_summary_job_detail_requests")
+    job = get_document_summary_job(job_id)
+    if not job or job.organization_id != context.organization_id:
+        raise HTTPException(status_code=404, detail="Document summary job not found")
+    return job.model_dump(mode="json")
 
 
 @app.get("/areas/{area_id}/activity")
@@ -1497,6 +1854,25 @@ def scheduler_run(context: AuthenticatedContext = Depends(require_api_key)) -> d
         "webhook_delivery_result": webhook_delivery_result,
         "delivery_result": delivery_result,
     }
+
+
+@app.get("/ops/ingestion/jobs")
+def ingestion_jobs(context: AuthenticatedContext = Depends(require_api_key)) -> list[dict]:
+    _record_usage(context, "ingestion_job_list_requests")
+    require_admin_session_context(context, action="List ingestion jobs")
+    return [item.model_dump(mode="json") for item in list_ingestion_jobs(context.organization_id)]
+
+
+@app.post("/ops/ingestion/backfill")
+def ingestion_backfill(
+    payload: IngestionJobCreateRequest,
+    context: AuthenticatedContext = Depends(require_api_key),
+) -> dict:
+    _record_usage(context, "ingestion_backfill_requests")
+    require_admin_session_context(context, action="Run ingestion backfills")
+    job = create_ingestion_job(context.organization_id, payload)
+    completed = _run_ingestion_job(job.job_id, payload)
+    return completed.model_dump(mode="json") if completed else job.model_dump(mode="json")
 
 
 @app.get("/exports/applications.csv")

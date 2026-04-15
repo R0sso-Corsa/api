@@ -24,6 +24,10 @@ def _load_sample(path: Path = DEFAULT_SAMPLE_FILE) -> RawApplicationEnvelope:
     return RawApplicationEnvelope.model_validate(payload)
 
 
+def fetch_sample_planning_data(path: Path = DEFAULT_SAMPLE_FILE) -> RawApplicationEnvelope:
+    return _load_sample(path)
+
+
 def _merge_envelopes(*envelopes: RawApplicationEnvelope) -> RawApplicationEnvelope:
     records = []
     sources = []

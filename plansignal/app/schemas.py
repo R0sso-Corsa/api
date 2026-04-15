@@ -437,6 +437,97 @@ class InvitationAcceptRequest(BaseModel):
         return _clean_text(value, field_name="Full name")
 
 
+class BillingSubscriptionInfo(BaseModel):
+    organization_id: str
+    plan_tier: Literal["starter", "growth", "scale", "enterprise"]
+    status: Literal["trialing", "active", "past_due", "canceled", "incomplete"]
+    stripe_customer_id: str | None = None
+    stripe_subscription_id: str | None = None
+    current_period_end: datetime | None = None
+    updated_at: datetime
+
+
+class BillingCheckoutRequest(BaseModel):
+    plan_tier: Literal["starter", "growth", "scale"] = "starter"
+    success_url: str | None = None
+    cancel_url: str | None = None
+
+    @field_validator("success_url", "cancel_url")
+    @classmethod
+    def _validate_optional_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_http_url(value, field_name="redirect URL")
+
+
+class BillingCheckoutSessionInfo(BaseModel):
+    session_id: str
+    organization_id: str
+    plan_tier: Literal["starter", "growth", "scale"]
+    checkout_url: str
+    mode: Literal["mock", "stripe"]
+    status: Literal["created", "completed", "expired"]
+    created_at: datetime
+
+
+class BillingPortalSessionInfo(BaseModel):
+    portal_url: str
+    mode: Literal["mock", "stripe"]
+
+
+class DocumentSummaryRequest(BaseModel):
+    force: bool = False
+
+
+class DocumentSummaryJobInfo(BaseModel):
+    job_id: str
+    organization_id: str
+    application_id: str
+    document_id: str
+    status: Literal["queued", "running", "ready", "failed"]
+    summary: str | None = None
+    source_url: str | None = None
+    failure_reason: str | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+class IngestionJobCreateRequest(BaseModel):
+    source: Literal["planning_applications", "authority_index", "overlay_refresh"] = "planning_applications"
+    area_id: str | None = None
+    limit: int = Field(default=100, ge=1, le=5000)
+    use_sample_fallback: bool = True
+
+    @field_validator("area_id")
+    @classmethod
+    def _validate_area_id(cls, value: str | None) -> str | None:
+        return _clean_optional_text(value)
+
+
+class IngestionJobInfo(BaseModel):
+    job_id: str
+    organization_id: str
+    source: Literal["planning_applications", "authority_index", "overlay_refresh"]
+    status: Literal["queued", "running", "completed", "failed"]
+    parameters: dict
+    result: dict | None = None
+    failure_reason: str | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+class SpatialIndexEntry(BaseModel):
+    entry_id: str
+    application_id: str
+    organization_id: str
+    latitude: float
+    longitude: float
+    authority_name: str
+    address: str
+    source_system: str
+    indexed_at: datetime
+
+
 class ApiKeyInfo(BaseModel):
     key_id: str
     key_prefix: str
